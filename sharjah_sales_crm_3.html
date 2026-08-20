@@ -1,0 +1,2129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<title>Sharjah Healthcare Sales Route Planner</title>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+/* ============================================================
+   SHARJAH HEALTHCARE SALES ROUTE PLANNER — STYLES
+   Professional medical-blue CRM aesthetic. Mobile-first.
+   ============================================================ */
+:root{
+  --navy:#0f172a; --navy-soft:#334155; --blue:#2563eb; --blue-dark:#1d4ed8; --blue-light:#eff6ff;
+  --green:#16a34a; --green-light:#f0fdf4; --orange:#f97316; --orange-light:#fff7ed;
+  --red:#dc2626; --red-light:#fef2f2; --purple:#9333ea; --purple-light:#faf5ff;
+  --gray:#64748b; --gray-light:#f1f5f9; --border:#e2e8f0; --bg:#f8fafc; --white:#ffffff;
+  --radius:12px; --shadow:0 1px 3px rgba(15,23,42,.08), 0 1px 2px rgba(15,23,42,.06);
+  --shadow-md:0 4px 12px rgba(15,23,42,.10);
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;height:100%;}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  background:var(--bg); color:var(--navy); font-size:14px; line-height:1.5;}
+h1,h2,h3,h4{margin:0 0 4px 0; color:var(--navy); font-weight:700;}
+button{font-family:inherit; cursor:pointer;}
+input,select,textarea{font-family:inherit; font-size:14px;}
+a{color:var(--blue); text-decoration:none;}
+::-webkit-scrollbar{width:8px;height:8px;}
+::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:4px;}
+
+/* ---- Layout shell ---- */
+#appShell{display:flex; min-height:100vh;}
+.sidebar{width:220px; background:var(--white); border-right:1px solid var(--border); flex-shrink:0;
+  padding:16px 12px; position:sticky; top:0; height:100vh; overflow-y:auto;}
+.sidebar .brand{display:flex; align-items:center; gap:8px; padding:8px 8px 20px 8px;}
+.sidebar .brand .logo{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,var(--blue),var(--blue-dark));
+  display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:15px;}
+.sidebar .brand .name{font-size:13.5px;font-weight:700;color:var(--navy); line-height:1.2;}
+.sidebar .brand .sub{font-size:11px;color:var(--gray);}
+.navlist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px;}
+.navitem{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:9px;color:var(--navy-soft);
+  font-weight:600;font-size:13.5px;border:none;background:transparent;width:100%;text-align:left;}
+.navitem:hover{background:var(--gray-light);}
+.navitem.active{background:var(--blue-light); color:var(--blue-dark);}
+.navitem .ic{font-size:16px;width:20px;text-align:center;}
+.sidebar-foot{margin-top:20px;padding-top:14px;border-top:1px solid var(--border);font-size:11px;color:var(--gray);}
+
+.main{flex:1; min-width:0; display:flex; flex-direction:column;}
+.topbar{position:sticky; top:0; z-index:40; background:var(--white); border-bottom:1px solid var(--border);
+  padding:10px 18px; display:flex; align-items:center; gap:12px; flex-wrap:wrap;}
+.topbar .search-wrap{flex:1; min-width:180px; position:relative;}
+.topbar input[type=search]{width:100%; padding:9px 12px 9px 34px; border-radius:9px; border:1px solid var(--border);
+  background:var(--gray-light); font-size:13.5px;}
+.topbar .search-wrap::before{content:"🔎"; position:absolute; left:10px; top:8px; font-size:13px;}
+.qa-row{display:flex; gap:6px; flex-wrap:wrap;}
+.content{padding:16px 18px 90px 18px; max-width:1400px; width:100%; margin:0 auto;}
+
+/* ---- Buttons ---- */
+.btn{border-radius:9px; border:1px solid var(--border); background:var(--white); color:var(--navy);
+  padding:8px 13px; font-size:12.5px; font-weight:600; display:inline-flex; align-items:center; gap:6px; white-space:nowrap;}
+.btn:hover{background:var(--gray-light);}
+.btn-primary{background:var(--blue); border-color:var(--blue); color:#fff;}
+.btn-primary:hover{background:var(--blue-dark);}
+.btn-green{background:var(--green); border-color:var(--green); color:#fff;}
+.btn-green:hover{background:#15803d;}
+.btn-orange{background:var(--orange); border-color:var(--orange); color:#fff;}
+.btn-red{background:var(--red); border-color:var(--red); color:#fff;}
+.btn-ghost{background:transparent; border-color:transparent;}
+.btn-sm{padding:5px 9px; font-size:11.5px; border-radius:7px;}
+.btn:disabled{opacity:.45; cursor:not-allowed;}
+.btn-block{width:100%; justify-content:center;}
+
+/* ---- Cards ---- */
+.card{background:var(--white); border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow); padding:16px;}
+.section-title{font-size:15px; font-weight:800; margin-bottom:10px; display:flex; align-items:center; justify-content:space-between; gap:8px;}
+.section-title small{font-weight:500; color:var(--gray); font-size:11.5px;}
+
+/* ---- Banner ---- */
+.banner-sample{background:var(--orange-light); border:1px solid #fed7aa; color:#9a3412; padding:9px 14px;
+  border-radius:9px; font-size:12.5px; font-weight:600; margin-bottom:14px; display:flex; align-items:center; gap:8px;}
+
+/* ---- KPI grid ---- */
+.kpi-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:10px; margin-bottom:16px;}
+.kpi{background:var(--white); border:1px solid var(--border); border-radius:var(--radius); padding:13px; box-shadow:var(--shadow);}
+.kpi .val{font-size:24px; font-weight:800; color:var(--navy);}
+.kpi .lbl{font-size:11px; font-weight:700; color:var(--gray); text-transform:uppercase; letter-spacing:.03em; margin-top:2px;}
+.kpi.blue .val{color:var(--blue);} .kpi.green .val{color:var(--green);} .kpi.orange .val{color:var(--orange);} .kpi.red .val{color:var(--red);} .kpi.purple .val{color:var(--purple);}
+
+/* ---- Grid helpers ---- */
+.grid-2{display:grid; grid-template-columns:1fr 1fr; gap:14px;}
+.grid-3{display:grid; grid-template-columns:repeat(3,1fr); gap:14px;}
+@media (max-width:900px){.grid-2,.grid-3{grid-template-columns:1fr;}}
+.stack{display:flex; flex-direction:column; gap:14px;}
+
+/* ---- Today's plan ---- */
+.plan-box{background:linear-gradient(135deg,var(--blue-light),#fff); border:1px solid #bfdbfe; border-radius:var(--radius); padding:16px; margin-bottom:16px;}
+.plan-box h3{color:var(--blue-dark); font-size:14px;}
+.plan-box ol{margin:8px 0 0 18px; padding:0;}
+.plan-box li{margin-bottom:4px; font-size:13px;}
+
+/* ---- Badges / pills ---- */
+.pill{display:inline-flex; align-items:center; gap:4px; padding:3px 9px; border-radius:99px; font-size:11px; font-weight:700; white-space:nowrap;}
+.pill-A{background:var(--red-light); color:var(--red);}
+.pill-B{background:var(--orange-light); color:var(--orange);}
+.pill-C{background:#fefce8; color:#a16207;}
+.pill-D{background:var(--gray-light); color:var(--gray);}
+.status-pill{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:99px;font-size:11px;font-weight:700;}
+
+/* ---- Table ---- */
+.table-wrap{overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius); background:#fff;}
+table{width:100%; border-collapse:collapse; font-size:12.5px; min-width:920px;}
+th{background:var(--gray-light); text-align:left; padding:9px 10px; font-weight:700; color:var(--navy-soft); font-size:11px; text-transform:uppercase; letter-spacing:.02em; position:sticky; top:0;}
+td{padding:9px 10px; border-top:1px solid var(--border); vertical-align:middle;}
+tr.fac-row:hover{background:var(--blue-light);}
+.fac-name{font-weight:700; color:var(--navy); cursor:pointer;}
+.fac-name:hover{color:var(--blue);}
+.sub{color:var(--gray); font-size:11px;}
+.actions-cell{display:flex; gap:4px; flex-wrap:wrap;}
+
+/* ---- Filters ---- */
+.filter-primary{display:flex; flex-wrap:wrap; gap:8px; align-items:center;}
+.filter-primary-search{flex:1; min-width:180px; padding:9px 11px; border-radius:9px; border:1px solid var(--border); background:#fff; font-size:13px;}
+.filter-primary-select{padding:9px 11px; border-radius:9px; border:1px solid var(--border); background:#fff; font-size:13px; font-weight:600; min-width:170px;}
+.filter-bar{display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; padding-top:10px; border-top:1px dashed var(--border);}
+.filter-bar select, .filter-bar input{padding:7px 9px; border-radius:8px; border:1px solid var(--border); background:#fff; font-size:12.5px;}
+@media (max-width:640px){ .filter-primary-select{min-width:0; flex:1;} }
+
+/* ---- Modal ---- */
+#modalOverlay{position:fixed; inset:0; background:rgba(15,23,42,.55); display:none; align-items:flex-start; justify-content:center;
+  padding:24px 12px; z-index:200; overflow-y:auto;}
+#modalOverlay.open{display:flex;}
+.modal{background:#fff; border-radius:14px; width:100%; max-width:640px; box-shadow:0 20px 50px rgba(0,0,0,.3); margin:auto 0;}
+.modal-head{display:flex; align-items:center; justify-content:space-between; padding:14px 18px; border-bottom:1px solid var(--border);}
+.modal-head h3{font-size:15px;}
+.modal-body{padding:16px 18px; max-height:75vh; overflow-y:auto;}
+.modal-foot{padding:12px 18px; border-top:1px solid var(--border); display:flex; justify-content:flex-end; gap:8px;}
+.form-row{margin-bottom:11px;}
+.form-row label{display:block; font-size:11.5px; font-weight:700; color:var(--navy-soft); margin-bottom:4px; text-transform:uppercase; letter-spacing:.02em;}
+.form-row input, .form-row select, .form-row textarea{width:100%; padding:8px 10px; border-radius:8px; border:1px solid var(--border); background:#fff;}
+.form-row textarea{min-height:60px; resize:vertical;}
+.form-2col{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+.tag-check{display:inline-flex; align-items:center; gap:5px; padding:5px 9px; border:1px solid var(--border); border-radius:99px; font-size:11.5px; margin:2px; background:#fff; cursor:pointer;}
+.tag-check input{margin:0;}
+.tag-wrap{display:flex; flex-wrap:wrap; margin:-2px;}
+
+/* ---- Timeline ---- */
+.timeline{border-left:2px solid var(--border); margin-left:8px; padding-left:16px;}
+.tl-item{position:relative; padding-bottom:16px;}
+.tl-item::before{content:""; position:absolute; left:-21px; top:3px; width:10px; height:10px; border-radius:50%; background:var(--blue); border:2px solid #fff;}
+.tl-date{font-size:11px; color:var(--gray); font-weight:700;}
+.tl-type{font-size:13px; font-weight:700; margin:2px 0;}
+
+/* ---- Route cards ---- */
+.route-card{background:#fff; border:1px solid var(--border); border-radius:var(--radius); padding:13px; box-shadow:var(--shadow); margin-bottom:10px;}
+.route-card .rc-top{display:flex; justify-content:space-between; gap:10px; align-items:flex-start;}
+.rc-checks{display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; padding-top:10px; border-top:1px dashed var(--border);}
+.rc-checks label{display:flex; align-items:center; gap:5px; font-size:11.5px; color:var(--navy-soft); background:var(--gray-light); padding:4px 8px; border-radius:7px;}
+
+/* ---- Follow-up buckets ---- */
+.fu-bucket h4{font-size:13px; margin-bottom:8px; display:flex; align-items:center; gap:6px;}
+.fu-item{background:#fff; border:1px solid var(--border); border-left:4px solid var(--blue); border-radius:9px; padding:10px 12px; margin-bottom:8px;}
+.fu-item.overdue{border-left-color:var(--red);}
+.fu-item.today{border-left-color:var(--orange);}
+
+/* ---- Funnel ---- */
+.funnel{display:flex; flex-direction:column; gap:4px; margin-top:8px;}
+.funnel-row{display:flex; align-items:center; gap:10px;}
+.funnel-bar{height:30px; background:linear-gradient(90deg,var(--blue),var(--blue-dark)); border-radius:6px; display:flex; align-items:center; color:#fff; font-weight:700; font-size:12px; padding:0 10px; min-width:34px;}
+.funnel-label{width:150px; font-size:12px; font-weight:600; color:var(--navy-soft); flex-shrink:0;}
+
+/* ---- Coverage ---- */
+.coverage-item{padding:10px 0; border-bottom:1px solid var(--border);}
+.coverage-item:last-child{border-bottom:none;}
+.coverage-top{display:flex; justify-content:space-between; font-size:12.5px; font-weight:700; margin-bottom:5px;}
+.progress-bg{height:9px; background:var(--gray-light); border-radius:99px; overflow:hidden;}
+.progress-fg{height:100%; background:var(--blue); border-radius:99px;}
+
+/* ---- Map ---- */
+#leafletMap{height:420px; border-radius:var(--radius); overflow:hidden; border:1px solid var(--border);}
+.map-fallback{padding:14px; text-align:center; color:var(--gray); font-size:12.5px;}
+
+/* ---- Charts ---- */
+.chart-box{background:#fff; border:1px solid var(--border); border-radius:var(--radius); padding:14px; box-shadow:var(--shadow);}
+.chart-box canvas{max-height:220px;}
+
+/* ---- Bottom nav (mobile) ---- */
+.bottomnav{display:none; position:fixed; bottom:0; left:0; right:0; background:#fff; border-top:1px solid var(--border);
+  z-index:60; padding:4px 2px calc(4px + env(safe-area-inset-bottom)) 2px;}
+.bottomnav .navlist{flex-direction:row; justify-content:space-between;}
+.bottomnav .navitem{flex-direction:column; gap:2px; font-size:10px; padding:6px 2px; flex:1; align-items:center;}
+.bottomnav .navitem .ic{font-size:18px;}
+
+.view{display:none;}
+.view.active{display:block;}
+
+.tab-bar{display:flex; gap:4px; border-bottom:1px solid var(--border); margin-bottom:12px;}
+.tab-btn{padding:8px 12px; border:none; background:transparent; font-weight:700; font-size:12.5px; color:var(--gray); border-bottom:2px solid transparent;}
+.tab-btn.active{color:var(--blue); border-color:var(--blue);}
+.tab-pane{display:none;} .tab-pane.active{display:block;}
+
+.note-item{background:var(--gray-light); border-radius:8px; padding:8px 10px; margin-bottom:6px; font-size:12.5px;}
+.note-item .nd{font-size:10.5px; color:var(--gray); font-weight:700;}
+
+.dup-item{border:1px solid #fed7aa; background:var(--orange-light); border-radius:9px; padding:10px; margin-bottom:8px;}
+.empty-state{text-align:center; padding:30px 10px; color:var(--gray); font-size:13px;}
+
+@media (max-width:980px){
+  .sidebar{display:none;}
+  .content{padding:12px 12px 90px 12px;}
+  .bottomnav{display:block;}
+  .form-2col{grid-template-columns:1fr;}
+  table{min-width:760px;}
+}
+</style>
+</head>
+<body>
+<div id="appShell">
+  <!-- ===================== SIDEBAR (desktop) ===================== -->
+  <nav class="sidebar">
+    <div class="brand">
+      <div class="logo">SH</div>
+      <div><div class="name">Sharjah Sales CRM</div><div class="sub">Route Planner</div></div>
+    </div>
+    <ul class="navlist" id="sideNav">
+      <li><button class="navitem" data-view="dashboard"><span class="ic">🏠</span>Dashboard</button></li>
+      <li><button class="navitem" data-view="facilities"><span class="ic">📍</span>Facilities</button></li>
+      <li><button class="navitem" data-view="route"><span class="ic">🗺</span>Route</button></li>
+      <li><button class="navitem" data-view="followups"><span class="ic">📅</span>Follow-ups</button></li>
+      <li><button class="navitem" data-view="analytics"><span class="ic">📊</span>Analytics</button></li>
+      <li><button class="navitem" data-view="settings"><span class="ic">⚙</span>Settings</button></li>
+    </ul>
+    <div class="sidebar-foot">Data stored locally in this browser only. No backend / no cloud sync.</div>
+  </nav>
+
+  <div class="main">
+    <!-- ===================== TOP BAR ===================== -->
+    <div class="topbar">
+      <div class="search-wrap"><input type="search" id="globalSearch" placeholder="Search facility, area, specialty, phone, contact, notes…"></div>
+      <div class="qa-row">
+        <button class="btn btn-primary btn-sm" data-action="open-add-facility">+ Facility</button>
+        <button class="btn btn-sm" data-action="quick-add-visit">+ Visit</button>
+        <button class="btn btn-sm" data-action="quick-add-followup">+ Follow-up</button>
+        <button class="btn btn-sm" data-action="quick-add-customer">+ Customer</button>
+        <button class="btn btn-green btn-sm" data-action="goto-route">Plan Today</button>
+        <button class="btn btn-sm" data-action="open-import">Import CSV</button>
+        <button class="btn btn-sm" data-action="open-export">Export</button>
+      </div>
+    </div>
+
+    <div class="content">
+      <!-- ===================== DASHBOARD ===================== -->
+      <section class="view active" id="view-dashboard">
+        <div id="sampleBanner"></div>
+        <div class="plan-box" id="todaysPlan"></div>
+        <div class="kpi-grid" id="kpiGrid"></div>
+        <div class="grid-2">
+          <div class="card">
+            <div class="section-title">Sales Funnel <small>All facilities by furthest stage reached</small></div>
+            <div class="funnel" id="funnelBox"></div>
+          </div>
+          <div class="card">
+            <div class="section-title">Today's Visit Tracker <small id="dtDate"></small></div>
+            <div id="dailyTrackerSummary"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================== FACILITIES ===================== -->
+      <section class="view" id="view-facilities">
+        <div class="section-title">Facility Database <small id="facCount"></small></div>
+        <div class="card" style="margin-bottom:12px;">
+          <div class="filter-primary">
+            <input type="search" id="facSearch" placeholder="Search facility, area, phone, contact…" class="filter-primary-search">
+            <select id="fArea" class="filter-primary-select"><option value="">Area — All</option></select>
+            <select id="fType" class="filter-primary-select"><option value="">Facility Type — All</option></select>
+            <button class="btn btn-sm" data-action="toggle-map">🗺 Map</button>
+            <button class="btn btn-sm" data-action="toggle-advanced">⚙ More Filters</button>
+          </div>
+          <div class="filter-bar" id="advancedFilters" style="display:none;">
+            <select id="fSpecialty"><option value="">All Specialties</option></select>
+            <select id="fPriority"><option value="">All Priority</option><option value="A">🔥 A - High</option><option value="B">🟠 B - Medium</option><option value="C">🟡 C - Low</option><option value="D">⚪ D - Low Potential</option></select>
+            <select id="fStatus"><option value="">All Status</option></select>
+            <select id="fPotential"><option value="">All Potential</option><option>High</option><option>Medium</option><option>Low</option></select>
+            <select id="fVisited"><option value="">Visited / Not Visited</option><option value="visited">Visited</option><option value="not">Not Visited</option></select>
+            <select id="fFollowup"><option value="">Follow-up Due?</option><option value="due">Due Now</option></select>
+            <select id="fCustProspect"><option value="">Customer / Prospect</option><option value="customer">Customers</option><option value="prospect">Prospects</option></select>
+            <select id="fProduct"><option value="">All Products</option></select>
+            <select id="fPurchasing"><option value="">All Purchasing Types</option></select>
+            <select id="fSort">
+              <option value="priority">Sort: Priority</option>
+              <option value="type">Sort: Facility Type</option>
+              <option value="area">Sort: Area</option>
+              <option value="lastVisit">Sort: Last Visit</option>
+              <option value="nextFollowup">Sort: Follow-up Date</option>
+              <option value="potential">Sort: Potential</option>
+              <option value="distance">Sort: Distance</option>
+              <option value="status">Sort: Status</option>
+              <option value="visits">Sort: # Visits</option>
+            </select>
+            <button class="btn btn-sm" data-action="clear-filters">Clear All</button>
+          </div>
+        </div>
+        <div id="mapPanel" style="display:none; margin-bottom:12px;">
+          <div id="leafletMap"></div>
+          <div class="map-fallback" id="mapFallback" style="display:none;"></div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th>Facility</th><th>Type</th><th>Area</th><th>Specialty</th><th>Priority</th><th>Status</th>
+              <th>Last Visit</th><th>Next Follow-up</th><th>Contact</th><th>Actions</th>
+            </tr></thead>
+            <tbody id="facTableBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ===================== ROUTE ===================== -->
+      <section class="view" id="view-route">
+        <div class="section-title">Plan My Day</div>
+        <div class="card" style="margin-bottom:14px;">
+          <div class="form-2col">
+            <div class="form-row"><label>Date</label><input type="date" id="rpDate"></div>
+            <div class="form-row"><label>Area</label><select id="rpArea"><option value="">All Areas</option></select></div>
+            <div class="form-row"><label>Maximum Visits</label><input type="number" id="rpMax" value="10" min="1" max="40"></div>
+            <div class="form-row"><label>Facility Type</label><select id="rpType"><option value="">All Types</option></select></div>
+          </div>
+          <div class="form-row">
+            <label>Priority</label>
+            <div class="tag-wrap">
+              <label class="tag-check"><input type="checkbox" class="rpPriority" value="A" checked>🔥 A</label>
+              <label class="tag-check"><input type="checkbox" class="rpPriority" value="B" checked>🟠 B</label>
+              <label class="tag-check"><input type="checkbox" class="rpPriority" value="C">🟡 C</label>
+              <label class="tag-check"><input type="checkbox" class="rpPriority" value="D">⚪ D</label>
+            </div>
+          </div>
+          <button class="btn btn-primary btn-block" data-action="generate-route">GENERATE TODAY'S ROUTE</button>
+        </div>
+
+        <div class="section-title">Daily Visit Tracker <small id="routeDateLabel"></small></div>
+        <div class="kpi-grid" id="dailyTrackerKpis" style="margin-bottom:14px;"></div>
+
+        <div class="section-title">Today's Route <button class="btn btn-sm" data-action="export-route">Export Route CSV</button></div>
+        <div id="routeList"></div>
+      </section>
+
+      <!-- ===================== FOLLOW-UPS ===================== -->
+      <section class="view" id="view-followups">
+        <div class="section-title">Follow-ups <button class="btn btn-sm" data-action="export-followups">Export CSV</button></div>
+        <div class="grid-2" style="margin-bottom:6px;">
+          <div class="fu-bucket card"><h4>🔴 Overdue</h4><div id="fuOverdue"></div></div>
+          <div class="fu-bucket card"><h4>🟠 Today</h4><div id="fuToday"></div></div>
+        </div>
+        <div class="grid-2" style="margin-top:14px;">
+          <div class="fu-bucket card"><h4>🟡 Next 7 Days</h4><div id="fuWeek"></div></div>
+          <div class="fu-bucket card"><h4>⚪ Later</h4><div id="fuLater"></div></div>
+        </div>
+      </section>
+
+      <!-- ===================== ANALYTICS ===================== -->
+      <section class="view" id="view-analytics">
+        <div class="section-title">Performance Dashboard</div>
+        <div class="grid-2" style="margin-bottom:14px;">
+          <div class="chart-box"><h4>Visits — Last 7 Days</h4><canvas id="chVisitsDay"></canvas></div>
+          <div class="chart-box"><h4>Visits — Last 6 Weeks</h4><canvas id="chVisitsWeek"></canvas></div>
+        </div>
+        <div class="grid-2" style="margin-bottom:14px;">
+          <div class="chart-box"><h4>Facility Types Visited</h4><canvas id="chTypesVisited"></canvas></div>
+          <div class="chart-box"><h4>Orders Over Time</h4><canvas id="chOrders"></canvas></div>
+        </div>
+        <div class="kpi-grid" id="analyticsKpis" style="margin-bottom:14px;"></div>
+        <div class="section-title">Sharjah Market Size <small>Official MOHAP counts vs. your working list</small></div>
+        <div class="card" id="marketBenchmarkBox" style="margin-bottom:14px;"></div>
+
+        <div class="section-title">Sharjah Coverage <small>Facilities visited per area, within your working list</small></div>
+        <div class="card" id="coverageBox"></div>
+      </section>
+
+      <!-- ===================== SETTINGS ===================== -->
+      <section class="view" id="view-settings">
+        <div class="stack">
+          <div class="card">
+            <div class="section-title">Areas</div>
+            <div class="tag-wrap" id="areaTagList"></div>
+            <div class="form-row" style="margin-top:10px; display:flex; gap:8px;">
+              <input type="text" id="newAreaInput" placeholder="Add new area name…" style="flex:1;">
+              <button class="btn btn-primary" data-action="add-area">Add Area</button>
+            </div>
+          </div>
+          <div class="card">
+            <div class="section-title">Data — Import / Export / Backup</div>
+            <div class="qa-row" style="margin-bottom:8px;">
+              <button class="btn" data-action="open-import">Import CSV</button>
+              <button class="btn" data-action="export-all">Export All Facilities</button>
+              <button class="btn" data-action="export-customers">Export Customers</button>
+              <button class="btn" data-action="export-prospects">Export Prospects</button>
+            </div>
+            <div class="qa-row">
+              <button class="btn btn-green" data-action="backup-data">⬇ Backup Data (JSON)</button>
+              <label class="btn" style="margin:0;">⬆ Restore Data (JSON)<input type="file" id="restoreFile" accept=".json" style="display:none;"></label>
+              <button class="btn btn-red" data-action="reset-data">Reset All Data</button>
+            </div>
+          </div>
+          <div class="card">
+            <div class="section-title">About &amp; Data Accuracy</div>
+            <p style="font-size:12.5px; color:var(--navy-soft);">This application ships with <strong>sample data only</strong>, clearly labelled, for testing the workflow. No facility names, phone numbers, addresses, coordinates, doctors, purchasing managers or suppliers have been verified. Before real-world use, import a verified facility database — the <strong>UAE Ministry of Health &amp; Prevention (MOHAP) medical facilities directory</strong> is the recommended primary source, and provides filters by facility type, specialty and emirate. Fields with no verified value are shown as "Not available" rather than invented.</p>
+            <p style="font-size:12.5px; color:var(--navy-soft); margin-top:8px;">The <strong>Analytics → Sharjah Market Size</strong> table uses real official counts (not names) from MOHAP's open-data "Number of Health Facilities" dataset for Sharjah, 2024 — see Analytics for the full breakdown and source note.</p>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== BOTTOM NAV (mobile) ===================== -->
+<nav class="bottomnav">
+  <ul class="navlist" id="bottomNav">
+    <li style="flex:1;"><button class="navitem" data-view="dashboard"><span class="ic">🏠</span>Home</button></li>
+    <li style="flex:1;"><button class="navitem" data-view="facilities"><span class="ic">📍</span>Facilities</button></li>
+    <li style="flex:1;"><button class="navitem" data-view="route"><span class="ic">🗺</span>Route</button></li>
+    <li style="flex:1;"><button class="navitem" data-view="followups"><span class="ic">📅</span>Follow-up</button></li>
+    <li style="flex:1;"><button class="navitem" data-view="analytics"><span class="ic">📊</span>Stats</button></li>
+    <li style="flex:1;"><button class="navitem" data-view="settings"><span class="ic">⚙</span>More</button></li>
+  </ul>
+</nav>
+
+<!-- ===================== MODAL ROOT ===================== -->
+<div id="modalOverlay"><div class="modal" id="modalBox"></div></div>
+<input type="file" id="csvFileInput" accept=".csv" style="display:none;">
+
+<script>
+/* ============================================================================
+   SHARJAH HEALTHCARE SALES ROUTE PLANNER
+   Vanilla JS CRM / route-planning app. All data is stored in localStorage.
+   No backend. No data is sent anywhere.
+   ============================================================================ */
+"use strict";
+
+/* ----------------------------------------------------------------------------
+   1. CONSTANTS
+   -------------------------------------------------------------------------- */
+const STORAGE_KEY = "sharjahSalesCRM_v1";
+
+const FACILITY_TYPES = [
+  "Hospitals","Medical Centers","General Clinics","Specialized Clinics",
+  "Dental Clinics","Day Surgery Hospitals","Diagnostic Centers","Rehabilitation / Physiotherapy Centers"
+];
+
+// Base priority points per facility type (per spec; Diagnostic Centers and
+// Rehabilitation/Physiotherapy were not explicitly scored in the brief, so a
+// reasonable mid/low default was assigned — adjust in code if needed).
+const TYPE_SCORE = {
+  "Hospitals":30, "Day Surgery Hospitals":25, "Medical Centers":20,
+  "Specialized Clinics":15, "General Clinics":10, "Dental Clinics":10,
+  "Diagnostic Centers":12, "Rehabilitation / Physiotherapy Centers":8
+};
+
+const SPECIALTIES = [
+  "General Medicine","General Surgery","Orthopedics","Gynecology","Dermatology","ENT",
+  "Ophthalmology","Cardiology","Urology","Gastroenterology","Pediatrics","Dentistry",
+  "Orthodontics","Physiotherapy","Radiology","Laboratory","Aesthetic Medicine","Emergency Medicine"
+];
+
+// Specialty relevance points (per spec; Gastroenterology mapped to the
+// brief's "Endoscopy" weighting since procedures overlap).
+const SPECIALTY_SCORE = {
+  "General Surgery":15, "Orthopedics":15, "Gynecology":10, "Dermatology":8,
+  "Dentistry":10, "Emergency Medicine":15, "Gastroenterology":15, "Urology":10, "Cardiology":8
+};
+
+const POTENTIAL_SCORE = { "High":20, "Medium":10, "Low":5 };
+
+const STATUSES = [
+  { key:"not_visited", label:"Not Visited", emoji:"🔴", color:"#dc2626" },
+  { key:"contacted", label:"Contacted", emoji:"🟡", color:"#ca8a04" },
+  { key:"visited", label:"Visited", emoji:"🔵", color:"#2563eb" },
+  { key:"follow_up", label:"Follow-up", emoji:"🟣", color:"#9333ea" },
+  { key:"customer", label:"Customer", emoji:"🟢", color:"#16a34a" },
+  { key:"not_interested", label:"Not Interested", emoji:"⚫", color:"#374151" },
+  { key:"potential_customer", label:"Potential Customer", emoji:"🟠", color:"#ea580c" }
+];
+
+const PRODUCT_CATEGORIES = [
+  "Surgical gloves","Examination gloves","Syringes","Needles","IV sets","Catheters","Urine bags",
+  "Dressing materials","Surgical gowns","Masks","Caps","Sutures","Drainage products",
+  "Infection-control products","Dental consumables","Other"
+];
+
+const PURCHASING_STRUCTURES = ["Central Procurement","Individual Facility","Doctor Controlled","Group Procurement","Owner Controlled","Unknown"];
+const CONTACT_ROLES = ["Doctor","Purchase Manager","Procurement","Store","Nurse","Administrator","Accounts","Owner"];
+const CUSTOMER_TYPES = ["Hospital","Medical Center","Clinic","Dental","Diagnostic","Other"];
+const OPPORTUNITY_LEVELS = ["High","Medium","Low"];
+
+const DEFAULT_AREAS = [
+  "Al Nahda","Al Taawun","Al Majaz","Al Qasimia","Al Mahatta","Al Ghuwair","Rolla","Al Nabba",
+  "Al Butina","Al Khan","Al Qasba","Abu Shagara","Al Yarmook","Al Jazzat","Muwaileh",
+  "Muwaileh Commercial","University City","Industrial Areas","Al Sajaa","Al Dhaid","Al Madam","Other Sharjah areas"
+];
+
+// Approximate area centre coordinates used ONLY to place sample markers on the
+// map for demo purposes. These are general area estimates, not verified
+// facility coordinates.
+const AREA_COORDS = {
+  "Al Nahda":[25.3296,55.3679], "Al Taawun":[25.3312,55.3853], "Al Majaz":[25.3268,55.3838],
+  "Al Qasimia":[25.3559,55.3894], "Al Mahatta":[25.3611,55.3892], "Al Ghuwair":[25.3597,55.3839],
+  "Rolla":[25.3572,55.3818], "Al Nabba":[25.3494,55.3958], "Al Butina":[25.3378,55.4064],
+  "Al Khan":[25.3222,55.3728], "Al Qasba":[25.3299,55.3785], "Abu Shagara":[25.3467,55.3924],
+  "Al Yarmook":[25.3355,55.4067], "Al Jazzat":[25.3477,55.4108], "Muwaileh":[25.3057,55.4507],
+  "Muwaileh Commercial":[25.2989,55.4402], "University City":[25.3068,55.4728],
+  "Industrial Areas":[25.3350,55.4300], "Al Sajaa":[25.3450,55.5700], "Al Dhaid":[25.2889,55.8794],
+  "Al Madam":[25.0242,55.7997], "Other Sharjah areas":[25.3463,55.4209]
+};
+
+const FUNNEL_STAGES = ["Prospects","Contacted","Visited","Product Discussion","Quotation","Follow-up","Order","Customer"];
+
+// ---------------------------------------------------------------------------
+// REAL MARKET BENCHMARK — UAE Ministry of Health & Prevention (MOHAP) open
+// data, dataset "Number of Health Facilities", Sharjah emirate, year 2024
+// (government + private combined). Source file supplied by the user:
+// "Health Facilities_2024.xlsx" (Data Owner: Ministry of Health & Prevention,
+// Last Update Date in source metadata: 2022-05-01 indicator definition, data
+// rows extend through 2024). These are OFFICIAL COUNTS ONLY — the dataset is
+// aggregated statistics, not a named/addressed facility-level list, so it
+// cannot populate individual facility records. It IS used here to show how
+// large the real Sharjah market is relative to the facilities you've
+// actually logged, and to split each type by Government vs Private sector
+// (a useful signal: government facilities generally buy via central/MOH
+// procurement, private facilities are typically direct sales targets).
+// School Health Clinics (141) and Optical Centers (92) are excluded because
+// they fall outside this app's facility-type categories.
+// ---------------------------------------------------------------------------
+const MOHAP_SHARJAH_2024 = {
+  year: 2024,
+  source: "UAE Ministry of Health & Prevention (MOHAP) open data — \"Number of Health Facilities\" dataset, Sharjah emirate",
+  excludedNote: "Excludes School Health Clinics (141 facilities) and Optical Centers (92 facilities) — outside this app's facility categories.",
+  byType: [
+    { type:"Hospitals", gov:8, priv:10 },
+    { type:"Day Surgery Hospitals", gov:0, priv:10 },
+    { type:"Medical Centers", gov:41, priv:385 },
+    { type:"General Clinics", gov:12, priv:21 },
+    { type:"Specialized Clinics", gov:2, priv:23 },
+    { type:"Dental Clinics", gov:0, priv:60 },
+    { type:"Diagnostic Centers", gov:2, priv:23 },
+    { type:"Rehabilitation / Physiotherapy Centers", gov:3, priv:65 }
+  ]
+};
+MOHAP_SHARJAH_2024.byType.forEach(r => r.total = r.gov + r.priv);
+MOHAP_SHARJAH_2024.grandTotal = MOHAP_SHARJAH_2024.byType.reduce((s,r)=>s+r.total,0);
+
+/* ----------------------------------------------------------------------------
+   2. STATE — load / save
+   -------------------------------------------------------------------------- */
+let STATE = null;
+
+function loadState(){
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if (raw){
+    try { return JSON.parse(raw); } catch(e){ console.error("Corrupt saved state, resetting.", e); }
+  }
+  return null;
+}
+function saveState(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(STATE)); }
+
+function createDefaultState(){
+  return {
+    version: 1,
+    areas: DEFAULT_AREAS.slice(),
+    facilities: buildSampleFacilities(),
+    route: null,                 // {date, area, type, priorities:[...], maxVisits, facilityIds:[...]}
+    routeChecklist: {},          // routeChecklist[date][facilityId] = {...flags}
+    createdAt: todayStr()
+  };
+}
+
+/* ----------------------------------------------------------------------------
+   3. UTILITIES
+   -------------------------------------------------------------------------- */
+function uid(prefix){ return (prefix||"f") + "_" + Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+function todayStr(){ return new Date().toISOString().slice(0,10); }
+function fmtDate(d){ if(!d) return "—"; return d; }
+function daysBetween(a,b){ return Math.round((new Date(b)-new Date(a))/86400000); }
+function escapeHtml(s){ return (s==null?"":String(s)).replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+function digitsOnly(s){ return (s||"").replace(/[^\d]/g,""); }
+
+function mapsLink(f){
+  if (f.lat && f.lon){
+    return `https://www.google.com/maps/search/?api=1&query=${f.lat},${f.lon}`;
+  }
+  const q = encodeURIComponent((f.name||"") + " Sharjah");
+  return `https://www.google.com/maps/search/?api=1&query=${q}`;
+}
+function telLink(phone){ return phone && phone!=="Not available" ? `tel:${digitsOnly(phone)}` : null; }
+function waLink(phone){ return phone && phone!=="Not available" ? `https://wa.me/${digitsOnly(phone)}` : null; }
+
+function haversine(lat1,lon1,lat2,lon2){
+  const R=6371, dLat=(lat2-lat1)*Math.PI/180, dLon=(lon2-lon1)*Math.PI/180;
+  const a=Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
+  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
+
+function normalizeStr(s){ return (s||"").toLowerCase().replace(/[^a-z0-9]/g,""); }
+
+/* ----------------------------------------------------------------------------
+   4. PRIORITY SCORING
+   -------------------------------------------------------------------------- */
+function computePriorityScore(f){
+  if (f.priorityOverride!=null && f.priorityOverride!=="") return Math.max(0,Math.min(100, Number(f.priorityOverride)));
+  let score = TYPE_SCORE[f.type] || 0;
+  (f.specialties||[]).forEach(sp => { score += SPECIALTY_SCORE[sp] || 0; });
+  score += POTENTIAL_SCORE[f.potential] || 0;
+  return Math.max(0, Math.min(100, score));
+}
+function priorityGrade(score){
+  if (score>=80) return "A";
+  if (score>=60) return "B";
+  if (score>=40) return "C";
+  return "D";
+}
+const GRADE_META = {
+  A:{label:"🔥 A — High Priority", cls:"pill-A"},
+  B:{label:"🟠 B — Medium Priority", cls:"pill-B"},
+  C:{label:"🟡 C — Low Priority", cls:"pill-C"},
+  D:{label:"⚪ D — Low Potential", cls:"pill-D"}
+};
+function statusMeta(key){ return STATUSES.find(s=>s.key===key) || STATUSES[0]; }
+
+/* Recompute cached score/grade fields on a facility (call after any edit). */
+function refreshFacilityScore(f){
+  f.priorityScore = computePriorityScore(f);
+  f.priorityGradeCalc = priorityGrade(f.priorityScore);
+}
+
+/* ----------------------------------------------------------------------------
+   5. SAMPLE DATA  (clearly labelled — NOT verified real-world data)
+   -------------------------------------------------------------------------- */
+function buildSampleFacilities(){
+  const raw = [
+    ["Al Qasimia General Hospital","Hospitals","Al Qasimia",["General Surgery","Emergency Medicine","Orthopedics"],"High",4,"Purchase Manager","Central Procurement","Hospital"],
+    ["Sharjah Day Surgery Center","Day Surgery Hospitals","Al Nahda",["General Surgery","Ophthalmology"],"High",3,"Procurement","Central Procurement","Hospital"],
+    ["Prime Medical Center","Medical Centers","Al Qasimia",["General Medicine","Dermatology"],"Medium",5,"Administrator","Individual Facility","Medical Center"],
+    ["Al Afdal Medical Center","Medical Centers","Al Nahda",["General Medicine","Gynecology"],"Medium",4,"Doctor","Doctor Controlled","Medical Center"],
+    ["Al Sherouq Medical Center","Medical Centers","Muwaileh",["General Medicine","Pediatrics"],"Medium",6,"Purchase Manager","Individual Facility","Medical Center"],
+    ["Al Taawun Family Clinic","General Clinics","Al Taawun",["General Medicine"],"Low",2,"Owner","Owner Controlled","Clinic"],
+    ["Rolla General Clinic","General Clinics","Rolla",["General Medicine","ENT"],"Low",2,"Doctor","Doctor Controlled","Clinic"],
+    ["Al Majaz Specialized Ortho Clinic","Specialized Clinics","Al Majaz",["Orthopedics","Physiotherapy"],"High",3,"Doctor","Doctor Controlled","Clinic"],
+    ["Al Khan Dermatology & Aesthetic Clinic","Specialized Clinics","Al Khan",["Dermatology","Aesthetic Medicine"],"Medium",2,"Owner","Owner Controlled","Clinic"],
+    ["Dar Al Qasimiah Dental Clinic","Dental Clinics","Al Qasimia",["Dentistry","Orthodontics"],"Medium",3,"Store","Individual Facility","Dental"],
+    ["Smile Care Dental Center","Dental Clinics","Al Nahda",["Dentistry"],"Low",2,"Doctor","Doctor Controlled","Dental"],
+    ["Al Nabba Diagnostic Center","Diagnostic Centers","Al Nabba",["Radiology","Laboratory"],"Medium",0,"Procurement","Central Procurement","Diagnostic"],
+    ["Sharjah Advanced Diagnostics","Diagnostic Centers","Al Majaz",["Laboratory","Radiology"],"High",0,"Procurement","Group Procurement","Diagnostic"],
+    ["Al Butina Physiotherapy Center","Rehabilitation / Physiotherapy Centers","Al Butina",["Physiotherapy"],"Low",1,"Owner","Owner Controlled","Other"],
+    ["University City Rehab Center","Rehabilitation / Physiotherapy Centers","University City",["Physiotherapy","Orthopedics"],"Medium",2,"Administrator","Individual Facility","Other"],
+    ["Al Yarmook Medical Center","Medical Centers","Al Yarmook",["General Medicine","Cardiology"],"Medium",3,"Purchase Manager","Individual Facility","Medical Center"],
+    ["Abu Shagara Gynecology Clinic","Specialized Clinics","Abu Shagara",["Gynecology"],"High",2,"Doctor","Doctor Controlled","Clinic"],
+    ["Al Qasba Urology & Endoscopy Center","Specialized Clinics","Al Qasba",["Urology","Gastroenterology"],"High",3,"Purchase Manager","Group Procurement","Clinic"],
+    ["Muwaileh Commercial Medical Center","Medical Centers","Muwaileh Commercial",["General Medicine","General Surgery"],"High",5,"Procurement","Central Procurement","Medical Center"],
+    ["Industrial Area Occupational Health Clinic","General Clinics","Industrial Areas",["General Medicine"],"Low",1,"Administrator","Owner Controlled","Clinic"]
+  ];
+  return raw.map((r,i)=>{
+    const [name,type,area,specialties,potential,doctors,role,purchasing,custType] = r;
+    const coords = AREA_COORDS[area] || AREA_COORDS["Other Sharjah areas"];
+    // tiny deterministic jitter so sample markers don't fully overlap
+    const jitterLat = ((i%5)-2)*0.003, jitterLon = (((i*3)%5)-2)*0.003;
+    const f = {
+      id: uid("f"),
+      name: name + " (Sample)",
+      type, area,
+      address: `Sample address, ${area}, Sharjah, UAE`,
+      lat: +(coords[0]+jitterLat).toFixed(5), lon: +(coords[1]+jitterLon).toFixed(5),
+      phone: "+971 6 555 0" + String(100+i).slice(-3),
+      website: i % 4 === 0 ? "www.sample-facility.ae" : "Not available",
+      specialties: specialties,
+      doctors: doctors,
+      contactPerson: role + " (Sample Contact)",
+      contactRole: role,
+      purchasingMethod: purchasing,
+      existingSupplier: "Not available",
+      productCategories: [PRODUCT_CATEGORIES[i % PRODUCT_CATEGORIES.length]],
+      potential: potential,
+      priorityOverride: null,
+      priorityScore: 0, priorityGradeCalc: "D",
+      status: "not_visited",
+      lastVisit: null,
+      nextFollowup: null,
+      customerType: custType,
+      purchasingStructure: purchasing,
+      opportunity: potential,
+      visitHistory: [],
+      followUps: [],
+      orders: [],
+      personalNotes: [],
+      funnelStage: 0,
+      isSample: true,
+      createdAt: todayStr()
+    };
+    refreshFacilityScore(f);
+    return f;
+  });
+}
+
+/* ----------------------------------------------------------------------------
+   6. INIT
+   -------------------------------------------------------------------------- */
+STATE = loadState() || createDefaultState();
+STATE.facilities.forEach(refreshFacilityScore);
+if (!STATE.routeChecklist) STATE.routeChecklist = {};
+if (!STATE.areas) STATE.areas = DEFAULT_AREAS.slice();
+saveState();
+
+let currentView = "dashboard";
+let mapVisible = false;
+let leafletMapObj = null;
+let leafletMarkers = [];
+let userGeo = null;
+let charts = {};
+
+/* ----------------------------------------------------------------------------
+   7. FILTERING / SEARCH / SORTING
+   -------------------------------------------------------------------------- */
+function matchesSearch(f, q){
+  if (!q) return true;
+  const words = q.toLowerCase().split(/\s+/).filter(Boolean);
+  const haystack = [
+    f.name, f.area, f.type, (f.specialties||[]).join(" "), f.phone, f.contactPerson,
+    (f.personalNotes||[]).map(n=>n.text).join(" "),
+    (f.visitHistory||[]).map(v=>v.notes).join(" ")
+  ].join(" ").toLowerCase();
+  return words.every(w => haystack.includes(w));
+}
+
+function facilityVisited(f){ return !!f.lastVisit; }
+function followupDue(f){
+  if (!f.nextFollowup) return false;
+  return f.nextFollowup <= todayStr() && f.status!=="customer" && f.status!=="not_interested";
+}
+
+function getFilteredFacilities(){
+  const q = (document.getElementById("facSearch")?.value || document.getElementById("globalSearch")?.value || "").trim();
+  const type = document.getElementById("fType")?.value || "";
+  const area = document.getElementById("fArea")?.value || "";
+  const specialty = document.getElementById("fSpecialty")?.value || "";
+  const grade = document.getElementById("fPriority")?.value || "";
+  const status = document.getElementById("fStatus")?.value || "";
+  const potential = document.getElementById("fPotential")?.value || "";
+  const visited = document.getElementById("fVisited")?.value || "";
+  const fu = document.getElementById("fFollowup")?.value || "";
+  const custProspect = document.getElementById("fCustProspect")?.value || "";
+  const product = document.getElementById("fProduct")?.value || "";
+  const purchasing = document.getElementById("fPurchasing")?.value || "";
+  const sortBy = document.getElementById("fSort")?.value || "priority";
+
+  let list = STATE.facilities.filter(f=>{
+    if (!matchesSearch(f,q)) return false;
+    if (type && f.type!==type) return false;
+    if (area && f.area!==area) return false;
+    if (specialty && !(f.specialties||[]).includes(specialty)) return false;
+    if (grade && f.priorityGradeCalc!==grade) return false;
+    if (status && f.status!==status) return false;
+    if (potential && f.potential!==potential) return false;
+    if (visited==="visited" && !facilityVisited(f)) return false;
+    if (visited==="not" && facilityVisited(f)) return false;
+    if (fu==="due" && !followupDue(f)) return false;
+    if (custProspect==="customer" && f.status!=="customer") return false;
+    if (custProspect==="prospect" && f.status==="customer") return false;
+    if (product && !(f.productCategories||[]).includes(product)) return false;
+    if (purchasing && f.purchasingStructure!==purchasing) return false;
+    return true;
+  });
+
+  list.sort((a,b)=>{
+    switch(sortBy){
+      case "priority": return b.priorityScore - a.priorityScore;
+      case "type": return (a.type||"").localeCompare(b.type||"");
+      case "area": return (a.area||"").localeCompare(b.area||"");
+      case "lastVisit": return (b.lastVisit||"").localeCompare(a.lastVisit||"");
+      case "nextFollowup": return (a.nextFollowup||"9999").localeCompare(b.nextFollowup||"9999");
+      case "potential": { const order={High:3,Medium:2,Low:1}; return (order[b.potential]||0)-(order[a.potential]||0); }
+      case "distance": {
+        if (!userGeo) return 0;
+        const da = a.lat&&a.lon ? haversine(userGeo.lat,userGeo.lon,a.lat,a.lon) : 99999;
+        const db = b.lat&&b.lon ? haversine(userGeo.lat,userGeo.lon,b.lat,b.lon) : 99999;
+        return da-db;
+      }
+      case "status": return (a.status||"").localeCompare(b.status||"");
+      case "visits": return (b.visitHistory||[]).length - (a.visitHistory||[]).length;
+      default: return b.priorityScore - a.priorityScore;
+    }
+  });
+  return list;
+}
+
+/* ----------------------------------------------------------------------------
+   8. VIEW SWITCHING / NAV
+   -------------------------------------------------------------------------- */
+function setView(view){
+  currentView = view;
+  document.querySelectorAll(".view").forEach(v=>v.classList.remove("active"));
+  document.getElementById("view-"+view).classList.add("active");
+  document.querySelectorAll(".navitem[data-view]").forEach(b=>{
+    b.classList.toggle("active", b.dataset.view===view);
+  });
+  renderCurrentView();
+  window.scrollTo({top:0, behavior:"instant"});
+}
+
+function renderCurrentView(){
+  switch(currentView){
+    case "dashboard": renderDashboard(); break;
+    case "facilities": renderFacilitiesView(); break;
+    case "route": renderRouteView(); break;
+    case "followups": renderFollowupsView(); break;
+    case "analytics": renderAnalyticsView(); break;
+    case "settings": renderSettingsView(); break;
+  }
+}
+
+/* ----------------------------------------------------------------------------
+   9. DASHBOARD
+   -------------------------------------------------------------------------- */
+function renderDashboard(){
+  renderSampleBanner();
+  renderKpis();
+  renderTodaysPlan();
+  renderFunnel("funnelBox");
+  renderDailyTrackerSummary();
+}
+
+function renderSampleBanner(){
+  const el = document.getElementById("sampleBanner");
+  const hasSample = STATE.facilities.some(f=>f.isSample);
+  el.innerHTML = hasSample ? `<div class="banner-sample">⚠️ Sample data — replace with a verified Sharjah facility database (see Settings). Sample records are marked "(Sample)".</div>` : "";
+}
+
+function computeKpis(){
+  const facs = STATE.facilities;
+  const count = t => facs.filter(f=>f.type===t).length;
+  return {
+    total: facs.length,
+    hospitals: count("Hospitals"),
+    medicalCenters: count("Medical Centers"),
+    clinics: count("General Clinics")+count("Specialized Clinics"),
+    dental: count("Dental Clinics"),
+    diagnostic: count("Diagnostic Centers"),
+    rehab: count("Rehabilitation / Physiotherapy Centers"),
+    visited: facs.filter(facilityVisited).length,
+    notVisited: facs.filter(f=>!facilityVisited(f)).length,
+    followupDue: facs.filter(followupDue).length,
+    highPriority: facs.filter(f=>f.priorityGradeCalc==="A").length,
+    customers: facs.filter(f=>f.status==="customer").length
+  };
+}
+
+function renderKpis(){
+  const k = computeKpis();
+  const cards = [
+    ["Total Facilities",k.total,""],["Hospitals",k.hospitals,"blue"],["Medical Centers",k.medicalCenters,"blue"],
+    ["Clinics",k.clinics,"blue"],["Dental",k.dental,"purple"],["Diagnostic",k.diagnostic,"purple"],
+    ["Rehabilitation",k.rehab,"purple"],["Visited",k.visited,"green"],["Not Visited",k.notVisited,"red"],
+    ["Follow-up Due",k.followupDue,"orange"],["High Priority",k.highPriority,"red"],["Customers",k.customers,"green"]
+  ];
+  document.getElementById("kpiGrid").innerHTML = cards.map(([lbl,val,cls])=>
+    `<div class="kpi ${cls}"><div class="val">${val}</div><div class="lbl">${lbl}</div></div>`).join("");
+}
+
+function renderTodaysPlan(){
+  const facs = STATE.facilities;
+  const highRemaining = facs.filter(f=>f.priorityGradeCalc==="A" && !facilityVisited(f));
+  const areaCounts = {};
+  highRemaining.forEach(f=>{ areaCounts[f.area]=(areaCounts[f.area]||0)+1; });
+  const topArea = Object.entries(areaCounts).sort((a,b)=>b[1]-a[1])[0];
+  const dueToday = facs.filter(f=>f.nextFollowup===todayStr());
+  const warmProspects = facs.filter(f=>f.status==="potential_customer");
+  const contactedNeedingPM = facs.filter(f=>f.status==="contacted");
+
+  const lines = [];
+  if (topArea) lines.push(`Visit <strong>${Math.min(4,topArea[1])} high-priority</strong> facilities in <strong>${escapeHtml(topArea[0])}</strong> (${topArea[1]} remaining there).`);
+  if (dueToday.length) lines.push(`Follow up on <strong>${dueToday.length} quotation${dueToday.length>1?"s":""}/follow-up${dueToday.length>1?"s":""}</strong> due today.`);
+  if (warmProspects.length) lines.push(`Revisit <strong>${Math.min(2,warmProspects.length)} warm prospect${warmProspects.length>1?"s":""}</strong> marked Potential Customer.`);
+  if (contactedNeedingPM.length) lines.push(`Contact the purchasing manager at <strong>${Math.min(2,contactedNeedingPM.length)}</strong> already-contacted facilities.`);
+  if (!lines.length) lines.push("No urgent items today — use Route Planner to build a new visit list.");
+
+  document.getElementById("todaysPlan").innerHTML = `
+    <h3>📋 Today's Sales Plan — ${escapeHtml(todayStr())}</h3>
+    <div style="font-size:13px;">You have <strong>${highRemaining.length}</strong> high-priority facilities remaining to visit.</div>
+    <div style="font-size:12.5px; color:var(--navy-soft); margin-top:4px;">Recommended today:</div>
+    <ol>${lines.map(l=>`<li>${l}</li>`).join("")}</ol>
+  `;
+}
+
+function renderFunnel(targetId){
+  const facs = STATE.facilities;
+  const counts = FUNNEL_STAGES.map((_,i)=> facs.filter(f=>(f.funnelStage||0) >= i).length);
+  const max = counts[0] || 1;
+  document.getElementById(targetId).innerHTML = FUNNEL_STAGES.map((label,i)=>{
+    const w = Math.max(8, Math.round((counts[i]/max)*100));
+    return `<div class="funnel-row"><div class="funnel-label">${label}</div>
+      <div class="funnel-bar" style="width:${w}%">${counts[i]}</div></div>`;
+  }).join("");
+}
+
+function getTodayRoute(){
+  if (STATE.route && STATE.route.date===todayStr()) return STATE.route;
+  return null;
+}
+function getChecklist(date, facilityId){
+  if (!STATE.routeChecklist[date]) STATE.routeChecklist[date] = {};
+  if (!STATE.routeChecklist[date][facilityId]) STATE.routeChecklist[date][facilityId] = {
+    visited:false, spokePurchaser:false, spokeDoctor:false, presentation:false,
+    quotation:false, sample:false, order:false, followupRequired:false
+  };
+  return STATE.routeChecklist[date][facilityId];
+}
+
+function renderDailyTrackerSummary(){
+  const route = getTodayRoute();
+  const el = document.getElementById("dailyTrackerSummary");
+  document.getElementById("dtDate").textContent = todayStr();
+  if (!route){
+    el.innerHTML = `<div class="empty-state">No route generated for today yet.<br><button class="btn btn-primary btn-sm" style="margin-top:8px;" data-action="goto-route">Plan Today's Route</button></div>`;
+    return;
+  }
+  const stats = computeDailyStats(route);
+  el.innerHTML = `
+    <div class="kpi-grid" style="grid-template-columns:repeat(3,1fr);">
+      <div class="kpi"><div class="val">${stats.planned}</div><div class="lbl">Planned</div></div>
+      <div class="kpi green"><div class="val">${stats.completed}</div><div class="lbl">Completed</div></div>
+      <div class="kpi orange"><div class="val">${stats.remaining}</div><div class="lbl">Remaining</div></div>
+      <div class="kpi blue"><div class="val">${stats.newLeads}</div><div class="lbl">New Leads</div></div>
+      <div class="kpi purple"><div class="val">${stats.followups}</div><div class="lbl">Follow-ups</div></div>
+      <div class="kpi green"><div class="val">${stats.orders}</div><div class="lbl">Orders</div></div>
+    </div>
+    <div style="margin-top:8px; font-size:12.5px; color:var(--navy-soft);">Conversion rate: <strong>${stats.conversion}%</strong> (orders / completed visits)</div>`;
+}
+
+function computeDailyStats(route){
+  const list = route.facilityIds.map(id=>STATE.facilities.find(f=>f.id===id)).filter(Boolean);
+  const planned = list.length;
+  let completed=0, newLeads=0, followups=0, orders=0;
+  list.forEach(f=>{
+    const c = getChecklist(route.date, f.id);
+    if (c.visited) completed++;
+    if (c.followupRequired) followups++;
+    if (c.order) orders++;
+    if (f.status==="contacted" && f.lastVisit===route.date) newLeads++;
+  });
+  const remaining = planned-completed;
+  const conversion = completed>0 ? Math.round((orders/completed)*100) : 0;
+  return {planned,completed,remaining,newLeads,followups,orders,conversion};
+}
+
+/* ----------------------------------------------------------------------------
+   10. FACILITIES VIEW (table + filters + map)
+   -------------------------------------------------------------------------- */
+function populateFilterOptions(){
+  const fType = document.getElementById("fType");
+  const fArea = document.getElementById("fArea");
+  const fSpecialty = document.getElementById("fSpecialty");
+  const fStatus = document.getElementById("fStatus");
+  const fProduct = document.getElementById("fProduct");
+  const fPurchasing = document.getElementById("fPurchasing");
+  const rpArea = document.getElementById("rpArea");
+  const rpType = document.getElementById("rpType");
+
+  if (fType && fType.options.length<=1){
+    FACILITY_TYPES.forEach(t=> fType.insertAdjacentHTML("beforeend", `<option>${t}</option>`));
+  }
+  if (rpType && rpType.options.length<=1){
+    FACILITY_TYPES.forEach(t=> rpType.insertAdjacentHTML("beforeend", `<option>${t}</option>`));
+  }
+  [fArea, rpArea].forEach(sel=>{
+    if (!sel) return;
+    const cur = sel.value;
+    sel.innerHTML = `<option value="">All Areas</option>` + STATE.areas.map(a=>`<option>${a}</option>`).join("");
+    sel.value = cur;
+  });
+  if (fSpecialty && fSpecialty.options.length<=1){
+    SPECIALTIES.forEach(s=> fSpecialty.insertAdjacentHTML("beforeend", `<option>${s}</option>`));
+  }
+  if (fStatus && fStatus.options.length<=1){
+    STATUSES.forEach(s=> fStatus.insertAdjacentHTML("beforeend", `<option value="${s.key}">${s.emoji} ${s.label}</option>`));
+  }
+  if (fProduct && fProduct.options.length<=1){
+    PRODUCT_CATEGORIES.forEach(p=> fProduct.insertAdjacentHTML("beforeend", `<option>${p}</option>`));
+  }
+  if (fPurchasing && fPurchasing.options.length<=1){
+    PURCHASING_STRUCTURES.forEach(p=> fPurchasing.insertAdjacentHTML("beforeend", `<option>${p}</option>`));
+  }
+}
+
+function renderFacilitiesView(){
+  populateFilterOptions();
+  const list = getFilteredFacilities();
+  document.getElementById("facCount").textContent = `${list.length} of ${STATE.facilities.length} facilities`;
+  const rows = list.map(f=>{
+    const g = f.priorityGradeCalc;
+    const st = statusMeta(f.status);
+    return `<tr class="fac-row">
+      <td><span class="fac-name" data-action="view-facility" data-id="${f.id}">${escapeHtml(f.name)}</span>${f.isSample?'<div class="sub">SAMPLE</div>':""}</td>
+      <td>${escapeHtml(f.type)}</td>
+      <td>${escapeHtml(f.area)}</td>
+      <td>${escapeHtml((f.specialties||[]).slice(0,2).join(", "))}${(f.specialties||[]).length>2?" …":""}</td>
+      <td><span class="pill ${GRADE_META[g].cls}">${GRADE_META[g].label.split(" ")[0]} ${g} (${f.priorityScore})</span></td>
+      <td>
+        <select class="statusSelect" data-id="${f.id}" style="border:1px solid var(--border); border-radius:7px; padding:3px 5px; font-size:11px;">
+          ${STATUSES.map(s=>`<option value="${s.key}" ${s.key===f.status?"selected":""}>${s.emoji} ${s.label}</option>`).join("")}
+        </select>
+      </td>
+      <td>${fmtDate(f.lastVisit)}</td>
+      <td>${fmtDate(f.nextFollowup)}${followupDue(f)?' <span class="pill pill-A">DUE</span>':""}</td>
+      <td>${escapeHtml(f.contactPerson||"Not available")}</td>
+      <td><div class="actions-cell">
+        <a class="btn btn-sm btn-ghost" href="${mapsLink(f)}" target="_blank" title="Open in Google Maps">📍</a>
+        ${telLink(f.phone)?`<a class="btn btn-sm btn-ghost" href="${telLink(f.phone)}" title="Call">📞</a>`:""}
+        <button class="btn btn-sm btn-ghost" data-action="quick-visit" data-id="${f.id}" title="Mark Visited">✔</button>
+        <button class="btn btn-sm btn-ghost" data-action="edit-facility" data-id="${f.id}" title="Edit">✏️</button>
+      </div></td>
+    </tr>`;
+  }).join("");
+  document.getElementById("facTableBody").innerHTML = rows || `<tr><td colspan="10"><div class="empty-state">No facilities match the current filters.</div></td></tr>`;
+
+  document.querySelectorAll(".statusSelect").forEach(sel=>{
+    sel.addEventListener("change", e=>{
+      const f = STATE.facilities.find(x=>x.id===sel.dataset.id);
+      if (!f) return;
+      f.status = sel.value;
+      if (sel.value==="contacted") f.funnelStage = Math.max(f.funnelStage||0,1);
+      if (sel.value==="visited"||sel.value==="follow_up") f.funnelStage = Math.max(f.funnelStage||0,2);
+      if (sel.value==="customer") f.funnelStage = Math.max(f.funnelStage||0,7);
+      saveState(); renderCurrentView();
+    });
+  });
+
+  if (mapVisible) renderMap(list);
+}
+
+/* ---- Map (Leaflet + graceful fallback) ---- */
+function renderMap(list){
+  const panel = document.getElementById("mapPanel");
+  panel.style.display = "block";
+  const fallback = document.getElementById("mapFallback");
+  const mapDiv = document.getElementById("leafletMap");
+  try{
+    if (typeof L === "undefined") throw new Error("Leaflet not loaded");
+    if (!leafletMapObj){
+      leafletMapObj = L.map("leafletMap").setView([25.3573,55.4033], 12);
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        maxZoom:19, attribution:"&copy; OpenStreetMap contributors"
+      }).addTo(leafletMapObj);
+    }
+    leafletMarkers.forEach(m=>leafletMapObj.removeLayer(m));
+    leafletMarkers = [];
+    let any=false;
+    list.forEach(f=>{
+      if (!f.lat || !f.lon) return;
+      any=true;
+      let color = "#eab308"; // low priority default (yellow)
+      if (f.status==="customer") color = "#16a34a";
+      else if (f.priorityGradeCalc==="A") color = "#dc2626";
+      else if (f.priorityGradeCalc==="B") color = "#f97316";
+      const icon = L.divIcon({className:"", html:`<div style="width:16px;height:16px;border-radius:50%;background:${color};border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.4);"></div>`, iconSize:[16,16]});
+      const marker = L.marker([f.lat,f.lon], {icon}).addTo(leafletMapObj);
+      marker.bindPopup(`
+        <div style="font-size:12.5px; min-width:180px;">
+          <strong>${escapeHtml(f.name)}</strong><br>
+          ${escapeHtml(f.type)} • ${escapeHtml(f.area)}<br>
+          Specialty: ${escapeHtml((f.specialties||[]).join(", ")||"—")}<br>
+          Priority: ${f.priorityGradeCalc} (${f.priorityScore})<br>
+          Phone: ${escapeHtml(f.phone||"Not available")}<br>
+          Status: ${statusMeta(f.status).emoji} ${statusMeta(f.status).label}<br>
+          Last visit: ${fmtDate(f.lastVisit)} | Next follow-up: ${fmtDate(f.nextFollowup)}<br>
+          <a href="${mapsLink(f)}" target="_blank">Open Google Maps ↗</a>
+        </div>`);
+      leafletMarkers.push(marker);
+    });
+    fallback.style.display = "none";
+    mapDiv.style.display = "block";
+    if (!any){
+      fallback.style.display="block"; mapDiv.style.display="none";
+      fallback.innerHTML = "No facilities in the current filter have coordinates to plot.";
+    }
+    setTimeout(()=>{ if(leafletMapObj) leafletMapObj.invalidateSize(); }, 200);
+  } catch(e){
+    mapDiv.style.display = "none";
+    fallback.style.display = "block";
+    fallback.innerHTML = `Map view unavailable (offline or blocked). Use the 📍 Google Maps links in the facility list instead.<br><div style="margin-top:8px; text-align:left;">` +
+      list.slice(0,25).map(f=>`<a href="${mapsLink(f)}" target="_blank" style="display:block; padding:4px 0;">📍 ${escapeHtml(f.name)} — ${escapeHtml(f.area)}</a>`).join("") + `</div>`;
+  }
+}
+
+/* ----------------------------------------------------------------------------
+   11. ROUTE VIEW — "Plan My Day"
+   -------------------------------------------------------------------------- */
+function renderRouteView(){
+  populateFilterOptions();
+  const rpDate = document.getElementById("rpDate");
+  if (!rpDate.value) rpDate.value = todayStr();
+
+  const route = STATE.route;
+  document.getElementById("routeDateLabel").textContent = route ? `for ${route.date}` : "";
+  const activeRoute = getTodayRoute();
+  if (activeRoute){
+    const stats = computeDailyStats(activeRoute);
+    document.getElementById("dailyTrackerKpis").innerHTML = `
+      <div class="kpi"><div class="val">${stats.planned}</div><div class="lbl">Planned</div></div>
+      <div class="kpi green"><div class="val">${stats.completed}</div><div class="lbl">Completed</div></div>
+      <div class="kpi orange"><div class="val">${stats.remaining}</div><div class="lbl">Remaining</div></div>
+      <div class="kpi blue"><div class="val">${stats.newLeads}</div><div class="lbl">New Leads</div></div>
+      <div class="kpi purple"><div class="val">${stats.followups}</div><div class="lbl">Follow-ups</div></div>
+      <div class="kpi green"><div class="val">${stats.orders}</div><div class="lbl">Orders</div></div>
+      <div class="kpi"><div class="val">${stats.conversion}%</div><div class="lbl">Conversion</div></div>`;
+  } else {
+    document.getElementById("dailyTrackerKpis").innerHTML = `<div class="empty-state">Generate today's route below to start tracking.</div>`;
+  }
+
+  const listEl = document.getElementById("routeList");
+  if (!route || !route.facilityIds || !route.facilityIds.length){
+    listEl.innerHTML = `<div class="card"><div class="empty-state">No route generated yet. Choose your criteria above and click "Generate Today's Route".</div></div>`;
+    return;
+  }
+  const facs = route.facilityIds.map(id=>STATE.facilities.find(f=>f.id===id)).filter(Boolean);
+  listEl.innerHTML = facs.map((f,i)=>{
+    const c = getChecklist(route.date, f.id);
+    const g = f.priorityGradeCalc;
+    return `<div class="route-card">
+      <div class="rc-top">
+        <div>
+          <div style="font-weight:800; font-size:13.5px;">${i+1}. ${escapeHtml(f.name)}</div>
+          <div class="sub">${escapeHtml(f.type)} • ${escapeHtml(f.area)} <span class="pill ${GRADE_META[g].cls}">${g}</span></div>
+          <div class="sub">${escapeHtml(f.address)}</div>
+          <div class="sub">📞 ${escapeHtml(f.phone||"Not available")} • ${statusMeta(f.status).emoji} ${statusMeta(f.status).label}</div>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:4px;">
+          <a class="btn btn-sm" href="${mapsLink(f)}" target="_blank">OPEN MAP</a>
+          ${telLink(f.phone)?`<a class="btn btn-sm" href="${telLink(f.phone)}">CALL</a>`:`<button class="btn btn-sm" disabled>CALL</button>`}
+          <button class="btn btn-sm btn-green" data-action="route-mark-visited" data-id="${f.id}">MARK VISITED</button>
+          <button class="btn btn-sm" data-action="route-add-note" data-id="${f.id}">ADD NOTE</button>
+        </div>
+      </div>
+      <div class="rc-checks">
+        <label><input type="checkbox" data-rc="visited" data-id="${f.id}" ${c.visited?"checked":""}> Visited</label>
+        <label><input type="checkbox" data-rc="spokePurchaser" data-id="${f.id}" ${c.spokePurchaser?"checked":""}> Spoke with purchaser</label>
+        <label><input type="checkbox" data-rc="spokeDoctor" data-id="${f.id}" ${c.spokeDoctor?"checked":""}> Spoke with doctor</label>
+        <label><input type="checkbox" data-rc="presentation" data-id="${f.id}" ${c.presentation?"checked":""}> Product presentation</label>
+        <label><input type="checkbox" data-rc="quotation" data-id="${f.id}" ${c.quotation?"checked":""}> Quotation requested</label>
+        <label><input type="checkbox" data-rc="sample" data-id="${f.id}" ${c.sample?"checked":""}> Sample requested</label>
+        <label><input type="checkbox" data-rc="order" data-id="${f.id}" ${c.order?"checked":""}> Order received</label>
+        <label><input type="checkbox" data-rc="followupRequired" data-id="${f.id}" ${c.followupRequired?"checked":""}> Follow-up required</label>
+      </div>
+    </div>`;
+  }).join("");
+
+  document.querySelectorAll("[data-rc]").forEach(cb=>{
+    cb.addEventListener("change", ()=>{
+      const c = getChecklist(route.date, cb.dataset.id);
+      c[cb.dataset.rc] = cb.checked;
+      const f = STATE.facilities.find(x=>x.id===cb.dataset.id);
+      if (f){
+        if (cb.dataset.rc==="visited" && cb.checked){
+          f.lastVisit = route.date;
+          if (f.status==="not_visited") f.status = "contacted";
+          f.funnelStage = Math.max(f.funnelStage||0,2);
+          f.visitHistory.push({date:route.date, type:"Visited", notes:"Marked visited from route tracker."});
+        }
+        if (cb.dataset.rc==="presentation" && cb.checked) f.funnelStage = Math.max(f.funnelStage||0,3);
+        if (cb.dataset.rc==="quotation" && cb.checked) f.funnelStage = Math.max(f.funnelStage||0,4);
+        if (cb.dataset.rc==="followupRequired" && cb.checked){
+          f.funnelStage = Math.max(f.funnelStage||0,5);
+          f.status = "follow_up";
+          if (!f.nextFollowup) f.nextFollowup = addDays(route.date,3);
+        }
+        if (cb.dataset.rc==="order" && cb.checked){
+          f.funnelStage = Math.max(f.funnelStage||0,6);
+          f.orders.push({date:route.date, product:"Not specified", notes:"Order flagged from route tracker."});
+        }
+        refreshFacilityScore(f);
+      }
+      saveState();
+      renderRouteView();
+    });
+  });
+}
+
+function addDays(dateStr, n){
+  const d = new Date(dateStr+"T00:00:00");
+  d.setDate(d.getDate()+n);
+  return d.toISOString().slice(0,10);
+}
+
+function generateRoute(){
+  const date = document.getElementById("rpDate").value || todayStr();
+  const area = document.getElementById("rpArea").value;
+  const maxVisits = Math.max(1, parseInt(document.getElementById("rpMax").value,10) || 10);
+  const type = document.getElementById("rpType").value;
+  const priorities = Array.from(document.querySelectorAll(".rpPriority:checked")).map(c=>c.value);
+
+  let candidates = STATE.facilities.filter(f=>{
+    if (area && f.area!==area) return false;
+    if (type && f.type!==type) return false;
+    if (priorities.length && !priorities.includes(f.priorityGradeCalc)) return false;
+    if (f.status==="not_interested") return false;
+    return true;
+  });
+  candidates.sort((a,b)=> b.priorityScore - a.priorityScore);
+  const chosen = candidates.slice(0, maxVisits);
+
+  STATE.route = { date, area, type, priorities, maxVisits, facilityIds: chosen.map(f=>f.id) };
+  chosen.forEach(f=> getChecklist(date, f.id));
+  saveState();
+  renderRouteView();
+  renderDashboard();
+}
+
+/* ----------------------------------------------------------------------------
+   12. FOLLOW-UPS VIEW
+   -------------------------------------------------------------------------- */
+function nearestOpenFollowUp(f){
+  const open = (f.followUps||[]).filter(fu=>!fu.done);
+  if (!open.length) return null;
+  return open.sort((a,b)=> (a.date||"").localeCompare(b.date||""))[0];
+}
+
+function followUpBucketFor(f){
+  const fu = nearestOpenFollowUp(f);
+  const date = fu ? fu.date : f.nextFollowup;
+  if (!date) return null;
+  if (date < todayStr()) return "overdue";
+  if (date === todayStr()) return "today";
+  if (date <= addDays(todayStr(),7)) return "week";
+  return "later";
+}
+
+function renderFollowupsView(){
+  const buckets = {overdue:[], today:[], week:[], later:[]};
+  STATE.facilities.forEach(f=>{
+    const b = followUpBucketFor(f);
+    if (b) buckets[b].push(f);
+  });
+  Object.values(buckets).forEach(arr=>arr.sort((a,b)=>(a.nextFollowup||"").localeCompare(b.nextFollowup||"")));
+
+  const renderBucket = (arr,cls)=> arr.length ? arr.map(f=>{
+    const fu = nearestOpenFollowUp(f);
+    return `<div class="fu-item ${cls}">
+      <div style="font-weight:700; font-size:12.5px;">${escapeHtml(f.name)}</div>
+      <div class="sub">${escapeHtml(f.contactPerson||"Not available")} • ${escapeHtml(f.area)}</div>
+      <div class="sub">Reason: ${escapeHtml(fu?fu.reason:"Scheduled follow-up")}</div>
+      <div class="sub">Date: ${fmtDate(f.nextFollowup)} • Priority: ${f.priorityGradeCalc}</div>
+      <div class="sub">Last discussion: ${escapeHtml(fu?fu.lastDiscussion||"—":"—")}</div>
+      <div class="sub">Next action: ${escapeHtml(fu?fu.nextAction||"—":"—")}</div>
+      <div class="actions-cell" style="margin-top:6px;">
+        ${telLink(f.phone)?`<a class="btn btn-sm" href="${telLink(f.phone)}">CALL</a>`:""}
+        ${waLink(f.phone)?`<a class="btn btn-sm" href="${waLink(f.phone)}" target="_blank">WHATSAPP</a>`:""}
+        <button class="btn btn-sm btn-green" data-action="followup-done" data-id="${f.id}">MARK DONE</button>
+        <button class="btn btn-sm" data-action="followup-reschedule" data-id="${f.id}">RESCHEDULE</button>
+      </div>
+    </div>`;
+  }).join("") : `<div class="empty-state">None</div>`;
+
+  document.getElementById("fuOverdue").innerHTML = renderBucket(buckets.overdue,"overdue");
+  document.getElementById("fuToday").innerHTML = renderBucket(buckets.today,"today");
+  document.getElementById("fuWeek").innerHTML = renderBucket(buckets.week,"");
+  document.getElementById("fuLater").innerHTML = renderBucket(buckets.later,"");
+}
+
+/* ----------------------------------------------------------------------------
+   13. ANALYTICS VIEW (charts + coverage)
+   -------------------------------------------------------------------------- */
+function renderAnalyticsView(){
+  renderAnalyticsKpis();
+  renderCharts();
+  renderCoverage();
+  renderMarketBenchmark();
+}
+
+function renderAnalyticsKpis(){
+  const facs = STATE.facilities;
+  const allVisits = facs.flatMap(f=>f.visitHistory||[]);
+  const allOrders = facs.flatMap(f=>f.orders||[]);
+  const visitedCount = facs.filter(facilityVisited).length;
+  const conversion = visitedCount>0 ? Math.round((allOrders.length/visitedCount)*100) : 0;
+  const cards = [
+    ["Total Visits Logged",allVisits.length,"blue"],
+    ["Total Orders",allOrders.length,"green"],
+    ["New Prospects",facs.filter(f=>f.status==="not_visited"||f.status==="contacted").length,"orange"],
+    ["Open Follow-ups",facs.filter(f=>(f.followUps||[]).some(x=>!x.done)).length,"purple"],
+    ["Overall Conversion",conversion+"%","green"],
+    ["High-Priority Visited",facs.filter(f=>f.priorityGradeCalc==="A"&&facilityVisited(f)).length,"red"]
+  ];
+  document.getElementById("analyticsKpis").innerHTML = cards.map(([lbl,val,cls])=>
+    `<div class="kpi ${cls}"><div class="val">${val}</div><div class="lbl">${lbl}</div></div>`).join("");
+}
+
+function destroyChart(key){ if (charts[key]){ charts[key].destroy(); delete charts[key]; } }
+
+function renderCharts(){
+  if (typeof Chart === "undefined"){
+    ["chVisitsDay","chVisitsWeek","chTypesVisited","chOrders"].forEach(id=>{
+      const c = document.getElementById(id);
+      if (c) c.parentElement.innerHTML = "<h4>"+c.parentElement.querySelector("h4").textContent+"</h4><div class='empty-state'>Charts unavailable offline.</div>";
+    });
+    return;
+  }
+  const facs = STATE.facilities;
+  const allVisits = facs.flatMap(f=>(f.visitHistory||[]).map(v=>v.date));
+  const allOrders = facs.flatMap(f=>(f.orders||[]).map(o=>o.date));
+
+  // Visits per day - last 7 days
+  const days = []; for(let i=6;i>=0;i--) days.push(addDays(todayStr(),-i));
+  const visitsPerDay = days.map(d=> allVisits.filter(v=>v===d).length);
+  destroyChart("day");
+  charts.day = new Chart(document.getElementById("chVisitsDay"), {
+    type:"bar", data:{labels:days.map(d=>d.slice(5)), datasets:[{label:"Visits", data:visitsPerDay, backgroundColor:"#2563eb"}]},
+    options:{plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true, ticks:{precision:0}}}}
+  });
+
+  // Visits per week - last 6 weeks
+  const weeks = []; for(let i=5;i>=0;i--) weeks.push(i);
+  const visitsPerWeek = weeks.map(i=>{
+    const start = addDays(todayStr(), -(i*7+6)), end = addDays(todayStr(), -(i*7));
+    return allVisits.filter(v=> v>=start && v<=end).length;
+  });
+  destroyChart("week");
+  charts.week = new Chart(document.getElementById("chVisitsWeek"), {
+    type:"bar", data:{labels:weeks.map(i=>"W-"+i).reverse(), datasets:[{label:"Visits", data:visitsPerWeek, backgroundColor:"#16a34a"}]},
+    options:{plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true, ticks:{precision:0}}}}
+  });
+
+  // Facility types visited (doughnut)
+  const typeCounts = {};
+  facs.filter(facilityVisited).forEach(f=> typeCounts[f.type]=(typeCounts[f.type]||0)+1);
+  destroyChart("types");
+  charts.types = new Chart(document.getElementById("chTypesVisited"), {
+    type:"doughnut",
+    data:{labels:Object.keys(typeCounts), datasets:[{data:Object.values(typeCounts), backgroundColor:["#2563eb","#16a34a","#f97316","#9333ea","#dc2626","#0891b2","#ca8a04","#64748b"]}]},
+    options:{plugins:{legend:{position:"bottom", labels:{boxWidth:10, font:{size:10}}}}}
+  });
+
+  // Orders over time (last 6 weeks)
+  const ordersPerWeek = weeks.map(i=>{
+    const start = addDays(todayStr(), -(i*7+6)), end = addDays(todayStr(), -(i*7));
+    return allOrders.filter(o=> o>=start && o<=end).length;
+  });
+  destroyChart("orders");
+  charts.orders = new Chart(document.getElementById("chOrders"), {
+    type:"line", data:{labels:weeks.map(i=>"W-"+i).reverse(), datasets:[{label:"Orders", data:ordersPerWeek, borderColor:"#dc2626", backgroundColor:"rgba(220,38,38,.15)", fill:true, tension:.3}]},
+    options:{plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true, ticks:{precision:0}}}}
+  });
+}
+
+function renderCoverage(){
+  const rows = STATE.areas.map(area=>{
+    const inArea = STATE.facilities.filter(f=>f.area===area);
+    const total = inArea.length;
+    const visited = inArea.filter(facilityVisited).length;
+    const remaining = total-visited;
+    const highRemaining = inArea.filter(f=>f.priorityGradeCalc==="A" && !facilityVisited(f)).length;
+    const customers = inArea.filter(f=>f.status==="customer").length;
+    const pct = total>0 ? Math.round((visited/total)*100) : 0;
+    return {area,total,visited,remaining,highRemaining,customers,pct};
+  }).filter(r=>r.total>0);
+
+  document.getElementById("coverageBox").innerHTML = rows.length ? rows.map(r=>`
+    <div class="coverage-item">
+      <div class="coverage-top"><span>${escapeHtml(r.area)}</span><span>${r.pct}%</span></div>
+      <div class="progress-bg"><div class="progress-fg" style="width:${r.pct}%"></div></div>
+      <div class="sub" style="margin-top:4px;">Total: ${r.total} • Visited: ${r.visited} • Remaining: ${r.remaining} • High-priority remaining: ${r.highRemaining} • Customers: ${r.customers}</div>
+    </div>`).join("") : `<div class="empty-state">No facilities yet.</div>`;
+}
+
+/* Real-world market benchmark, sourced from MOHAP open data (see constant
+   above). Shows how many facilities of each type are known to actually exist
+   in Sharjah vs. how many are in the user's working list / visited — this is
+   the honest denominator, since the app's own facility list will usually be
+   a subset (sample or partially built up) rather than the whole market. */
+function renderMarketBenchmark(){
+  const el = document.getElementById("marketBenchmarkBox");
+  if (!el) return;
+  const rows = MOHAP_SHARJAH_2024.byType.map(ref=>{
+    const inList = STATE.facilities.filter(f=>f.type===ref.type).length;
+    const visited = STATE.facilities.filter(f=>f.type===ref.type && facilityVisited(f)).length;
+    const pctOfMarketInList = ref.total>0 ? Math.round((inList/ref.total)*100) : 0;
+    return {...ref, inList, visited, pctOfMarketInList};
+  });
+  el.innerHTML = `
+    <div class="sub" style="margin-bottom:10px;">Source: ${escapeHtml(MOHAP_SHARJAH_2024.source)}, ${MOHAP_SHARJAH_2024.year} (government + private). ${escapeHtml(MOHAP_SHARJAH_2024.excludedNote)} This is an official <strong>count only</strong> — MOHAP's aggregate statistics do not include individual facility names or addresses, so it can't populate the facility list directly; use it to gauge how much of the real market your list currently covers.</div>
+    <div class="table-wrap">
+      <table style="min-width:0;">
+        <thead><tr><th>Facility Type</th><th>Sharjah Market (Gov)</th><th>Sharjah Market (Private)</th><th>Sharjah Market (Total)</th><th>In Your List</th><th>Visited</th><th>% of Market in Your List</th></tr></thead>
+        <tbody>
+          ${rows.map(r=>`<tr>
+            <td style="font-weight:700;">${escapeHtml(r.type)}</td>
+            <td>${r.gov}</td><td>${r.priv}</td><td style="font-weight:700;">${r.total}</td>
+            <td>${r.inList}</td><td>${r.visited}</td>
+            <td><div class="progress-bg" style="width:80px; display:inline-block; vertical-align:middle; margin-right:6px;"><div class="progress-fg" style="width:${Math.min(100,r.pctOfMarketInList)}%"></div></div>${r.pctOfMarketInList}%</td>
+          </tr>`).join("")}
+          <tr style="font-weight:800; background:var(--gray-light);">
+            <td>Total (this app's categories)</td>
+            <td>${MOHAP_SHARJAH_2024.byType.reduce((s,r)=>s+r.gov,0)}</td>
+            <td>${MOHAP_SHARJAH_2024.byType.reduce((s,r)=>s+r.priv,0)}</td>
+            <td>${MOHAP_SHARJAH_2024.grandTotal}</td>
+            <td>${STATE.facilities.length}</td>
+            <td>${STATE.facilities.filter(facilityVisited).length}</td>
+            <td>${Math.round((STATE.facilities.length/MOHAP_SHARJAH_2024.grandTotal)*100)}%</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>`;
+}
+
+/* ----------------------------------------------------------------------------
+   14. SETTINGS VIEW
+   -------------------------------------------------------------------------- */
+function renderSettingsView(){
+  document.getElementById("areaTagList").innerHTML = STATE.areas.map(a=>
+    `<span class="tag-check">${escapeHtml(a)} <button data-action="remove-area" data-id="${escapeHtml(a)}" style="border:none;background:none;color:var(--red);cursor:pointer;font-weight:800;">×</button></span>`
+  ).join("");
+}
+
+/* ----------------------------------------------------------------------------
+   15. MODAL INFRASTRUCTURE
+   -------------------------------------------------------------------------- */
+function openModal(html){
+  document.getElementById("modalBox").innerHTML = html;
+  document.getElementById("modalOverlay").classList.add("open");
+}
+function closeModal(){
+  document.getElementById("modalOverlay").classList.remove("open");
+  document.getElementById("modalBox").innerHTML = "";
+}
+document.getElementById("modalOverlay").addEventListener("click", e=>{
+  if (e.target.id === "modalOverlay") closeModal();
+});
+document.addEventListener("keydown", e=>{ if (e.key==="Escape") closeModal(); });
+
+function tagCheckboxes(name, options, selected){
+  selected = selected || [];
+  return `<div class="tag-wrap">` + options.map(o=>
+    `<label class="tag-check"><input type="checkbox" name="${name}" value="${escapeHtml(o)}" ${selected.includes(o)?"checked":""}>${escapeHtml(o)}</label>`
+  ).join("") + `</div>`;
+}
+function getCheckedValues(container, name){
+  return Array.from(container.querySelectorAll(`input[name="${name}"]:checked`)).map(i=>i.value);
+}
+function selectOptions(options, selected){
+  return options.map(o=>`<option value="${escapeHtml(o)}" ${o===selected?"selected":""}>${escapeHtml(o)}</option>`).join("");
+}
+
+/* ----------------------------------------------------------------------------
+   16. FACILITY ADD / EDIT FORM
+   -------------------------------------------------------------------------- */
+function openFacilityForm(facilityId, presetStatus){
+  const f = facilityId ? STATE.facilities.find(x=>x.id===facilityId) : null;
+  const isEdit = !!f;
+  const d = f || {
+    name:"", type:FACILITY_TYPES[0], area:STATE.areas[0], address:"", lat:"", lon:"", phone:"", website:"",
+    specialties:[], doctors:"", contactPerson:"", contactRole:CONTACT_ROLES[0], purchasingMethod:PURCHASING_STRUCTURES[0],
+    existingSupplier:"", productCategories:[], potential:"Medium", priorityOverride:null,
+    status: presetStatus||"not_visited", customerType:CUSTOMER_TYPES[0], purchasingStructure:PURCHASING_STRUCTURES[0],
+    opportunity:"Medium"
+  };
+  openModal(`
+    <div class="modal-head"><h3>${isEdit?"Edit Facility":"Add Facility"}</h3><button class="btn btn-sm btn-ghost" data-action="close-modal">✕</button></div>
+    <div class="modal-body">
+      <form id="facilityForm">
+        <div class="form-row"><label>Facility Name *</label><input type="text" id="ffName" required value="${escapeHtml(d.name)}"></div>
+        <div class="form-2col">
+          <div class="form-row"><label>Type</label><select id="ffType">${selectOptions(FACILITY_TYPES,d.type)}</select></div>
+          <div class="form-row"><label>Area</label><select id="ffArea">${selectOptions(STATE.areas,d.area)}</select></div>
+        </div>
+        <div class="form-row"><label>Full Address</label><textarea id="ffAddress">${escapeHtml(d.address||"")}</textarea></div>
+        <div class="form-2col">
+          <div class="form-row"><label>Latitude (optional)</label><input type="text" id="ffLat" value="${d.lat||""}"></div>
+          <div class="form-row"><label>Longitude (optional)</label><input type="text" id="ffLon" value="${d.lon||""}"></div>
+        </div>
+        <div class="form-2col">
+          <div class="form-row"><label>Phone</label><input type="text" id="ffPhone" value="${escapeHtml(d.phone||"")}" placeholder="Not available"></div>
+          <div class="form-row"><label>Website</label><input type="text" id="ffWebsite" value="${escapeHtml(d.website||"")}" placeholder="Not available"></div>
+        </div>
+        <div class="form-row"><label>Specialties</label>${tagCheckboxes("specialty",SPECIALTIES,d.specialties)}</div>
+        <div class="form-2col">
+          <div class="form-row"><label># Doctors (if known)</label><input type="text" id="ffDoctors" value="${escapeHtml(d.doctors!=null?d.doctors:"")}" placeholder="Not available"></div>
+          <div class="form-row"><label>Potential</label><select id="ffPotential">${selectOptions(OPPORTUNITY_LEVELS,d.potential)}</select></div>
+        </div>
+        <div class="form-2col">
+          <div class="form-row"><label>Procurement / Contact Person</label><input type="text" id="ffContactPerson" value="${escapeHtml(d.contactPerson||"")}" placeholder="Not available"></div>
+          <div class="form-row"><label>Contact Role</label><select id="ffContactRole">${selectOptions(CONTACT_ROLES,d.contactRole)}</select></div>
+        </div>
+        <div class="form-2col">
+          <div class="form-row"><label>Purchasing Structure</label><select id="ffPurchasing">${selectOptions(PURCHASING_STRUCTURES,d.purchasingStructure||d.purchasingMethod)}</select></div>
+          <div class="form-row"><label>Customer Type</label><select id="ffCustType">${selectOptions(CUSTOMER_TYPES,d.customerType)}</select></div>
+        </div>
+        <div class="form-row"><label>Existing Supplier</label><input type="text" id="ffSupplier" value="${escapeHtml(d.existingSupplier||"")}" placeholder="Not available"></div>
+        <div class="form-row"><label>Product Categories Used / Opportunity</label>${tagCheckboxes("product",PRODUCT_CATEGORIES,d.productCategories)}</div>
+        <div class="form-2col">
+          <div class="form-row"><label>Status</label><select id="ffStatus">${STATUSES.map(s=>`<option value="${s.key}" ${s.key===d.status?"selected":""}>${s.emoji} ${s.label}</option>`).join("")}</select></div>
+          <div class="form-row"><label>Priority Override (blank = auto)</label><input type="number" id="ffOverride" min="0" max="100" value="${d.priorityOverride!=null?d.priorityOverride:""}"></div>
+        </div>
+        <div class="form-row"><label>Notes</label><textarea id="ffNotes" placeholder="e.g. Purchase manager available after 4 PM"></textarea></div>
+      </form>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" data-action="close-modal">Cancel</button>
+      ${isEdit?`<button class="btn btn-red" data-action="delete-facility" data-id="${f.id}">Delete</button>`:""}
+      <button class="btn btn-primary" data-action="save-facility" data-id="${isEdit?f.id:''}">Save Facility</button>
+    </div>
+  `);
+}
+
+function saveFacilityForm(existingId){
+  const form = document.getElementById("facilityForm");
+  const name = document.getElementById("ffName").value.trim();
+  if (!name){ alert("Facility name is required."); return; }
+  const specialties = getCheckedValues(form,"specialty");
+  const products = getCheckedValues(form,"product");
+  const overrideVal = document.getElementById("ffOverride").value;
+  const notesTxt = document.getElementById("ffNotes").value.trim();
+
+  let f = existingId ? STATE.facilities.find(x=>x.id===existingId) : null;
+  const isNew = !f;
+  if (isNew){
+    f = { id:uid("f"), visitHistory:[], followUps:[], orders:[], personalNotes:[], funnelStage:0, isSample:false, createdAt:todayStr(), lastVisit:null, nextFollowup:null };
+    STATE.facilities.push(f);
+  }
+  Object.assign(f, {
+    name, type:document.getElementById("ffType").value, area:document.getElementById("ffArea").value,
+    address:document.getElementById("ffAddress").value.trim() || "Not available",
+    lat: parseFloat(document.getElementById("ffLat").value) || null,
+    lon: parseFloat(document.getElementById("ffLon").value) || null,
+    phone: document.getElementById("ffPhone").value.trim() || "Not available",
+    website: document.getElementById("ffWebsite").value.trim() || "Not available",
+    specialties, doctors: document.getElementById("ffDoctors").value.trim() || "Not available",
+    potential: document.getElementById("ffPotential").value,
+    contactPerson: document.getElementById("ffContactPerson").value.trim() || "Not available",
+    contactRole: document.getElementById("ffContactRole").value,
+    purchasingStructure: document.getElementById("ffPurchasing").value,
+    purchasingMethod: document.getElementById("ffPurchasing").value,
+    customerType: document.getElementById("ffCustType").value,
+    existingSupplier: document.getElementById("ffSupplier").value.trim() || "Not available",
+    productCategories: products,
+    status: document.getElementById("ffStatus").value,
+    priorityOverride: overrideVal===""?null:Number(overrideVal),
+    opportunity: document.getElementById("ffPotential").value
+  });
+  if (notesTxt) f.personalNotes.push({date:todayStr(), text:notesTxt});
+  if (f.status==="customer") f.funnelStage = Math.max(f.funnelStage||0,7);
+  refreshFacilityScore(f);
+  saveState();
+  closeModal();
+  renderCurrentView();
+}
+
+/* ----------------------------------------------------------------------------
+   17. FACILITY PROFILE MODAL
+   -------------------------------------------------------------------------- */
+function openFacilityProfile(facilityId){
+  const f = STATE.facilities.find(x=>x.id===facilityId);
+  if (!f) return;
+  const g = f.priorityGradeCalc;
+  const st = statusMeta(f.status);
+  const history = [
+    ...(f.visitHistory||[]).map(v=>({date:v.date, type:v.type||"Visited", text:v.notes||""})),
+    ...(f.followUps||[]).map(v=>({date:v.date, type:"Follow-up", text:(v.reason||"")+(v.nextAction?(" — Next: "+v.nextAction):"")})),
+    ...(f.orders||[]).map(v=>({date:v.date, type:"Order", text:(v.product||"")+(v.notes?(" — "+v.notes):"")}))
+  ].sort((a,b)=> (b.date||"").localeCompare(a.date||""));
+
+  openModal(`
+    <div class="modal-head"><h3>${escapeHtml(f.name)}</h3><button class="btn btn-sm btn-ghost" data-action="close-modal">✕</button></div>
+    <div class="modal-body">
+      <div class="tab-bar">
+        <button class="tab-btn active" data-tab="tabInfo">Info</button>
+        <button class="tab-btn" data-tab="tabHistory">History</button>
+        <button class="tab-btn" data-tab="tabNotes">Notes</button>
+      </div>
+      <div class="tab-pane active" id="tabInfo">
+        <div class="sub">Type</div><div style="margin-bottom:8px;">${escapeHtml(f.type)}</div>
+        <div class="sub">Area</div><div style="margin-bottom:8px;">${escapeHtml(f.area)}</div>
+        <div class="sub">Address</div><div style="margin-bottom:8px;">${escapeHtml(f.address||"Not available")}</div>
+        <div class="sub">Phone</div><div style="margin-bottom:8px;">${escapeHtml(f.phone||"Not available")}</div>
+        <div class="sub">Website</div><div style="margin-bottom:8px;">${escapeHtml(f.website||"Not available")}</div>
+        <div class="sub">Specialties</div><div style="margin-bottom:8px;">${escapeHtml((f.specialties||[]).join(", ")||"None recorded")}</div>
+        <div class="sub">Priority Score</div><div style="margin-bottom:8px;"><span class="pill ${GRADE_META[g].cls}">${GRADE_META[g].label} — ${f.priorityScore}</span></div>
+        <div class="sub">Potential</div><div style="margin-bottom:8px;">${escapeHtml(f.potential)}</div>
+        <div class="sub">Status</div><div style="margin-bottom:8px;">${st.emoji} ${st.label}</div>
+        <div class="sub">Last Visit / Next Follow-up</div><div style="margin-bottom:8px;">${fmtDate(f.lastVisit)} / ${fmtDate(f.nextFollowup)}</div>
+        <div class="sub">Purchasing Contact</div><div style="margin-bottom:8px;">${escapeHtml(f.contactPerson||"Not available")} (${escapeHtml(f.contactRole||"—")})</div>
+        <div class="sub">Purchasing Structure</div><div style="margin-bottom:8px;">${escapeHtml(f.purchasingStructure||"Unknown")}</div>
+        <div class="sub">Existing Supplier</div><div style="margin-bottom:8px;">${escapeHtml(f.existingSupplier||"Not available")}</div>
+        <div class="sub">Product Categories</div><div style="margin-bottom:8px;">${escapeHtml((f.productCategories||[]).join(", ")||"None recorded")}</div>
+      </div>
+      <div class="tab-pane" id="tabHistory">
+        <div class="timeline">
+          ${history.length ? history.map(h=>`<div class="tl-item"><div class="tl-date">${fmtDate(h.date)}</div><div class="tl-type">${escapeHtml(h.type)}</div><div class="sub">${escapeHtml(h.text)}</div></div>`).join("") : `<div class="empty-state">No visit/follow-up/order history yet.</div>`}
+        </div>
+      </div>
+      <div class="tab-pane" id="tabNotes">
+        <div id="notesListWrap">${(f.personalNotes||[]).slice().reverse().map(n=>`<div class="note-item"><div class="nd">${fmtDate(n.date)}</div>${escapeHtml(n.text)}</div>`).join("") || `<div class="empty-state">No notes yet.</div>`}</div>
+        <div class="form-row" style="margin-top:10px; display:flex; gap:8px;">
+          <input type="text" id="quickNoteInput" placeholder="Quick note, e.g. Call before visiting…" style="flex:1;">
+          <button class="btn btn-primary" data-action="add-quick-note" data-id="${f.id}">Add</button>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot" style="flex-wrap:wrap;">
+      ${telLink(f.phone)?`<a class="btn btn-sm" href="${telLink(f.phone)}">CALL</a>`:`<button class="btn btn-sm" disabled>CALL</button>`}
+      ${waLink(f.phone)?`<a class="btn btn-sm" href="${waLink(f.phone)}" target="_blank">WHATSAPP</a>`:`<button class="btn btn-sm" disabled>WHATSAPP</button>`}
+      <a class="btn btn-sm" href="${mapsLink(f)}" target="_blank">GOOGLE MAPS</a>
+      ${f.website&&f.website!=="Not available"?`<a class="btn btn-sm" href="https://${f.website.replace(/^https?:\/\//,"")}" target="_blank">WEBSITE</a>`:`<button class="btn btn-sm" disabled>WEBSITE</button>`}
+      <button class="btn btn-sm" data-action="edit-facility" data-id="${f.id}">EDIT</button>
+      <button class="btn btn-sm btn-green" data-action="quick-visit" data-id="${f.id}">MARK VISITED</button>
+      <button class="btn btn-sm btn-orange" data-action="quick-add-followup" data-id="${f.id}">ADD FOLLOW-UP</button>
+      <button class="btn btn-sm" data-action="quick-add-order" data-id="${f.id}">ADD ORDER</button>
+    </div>
+  `);
+
+  document.querySelectorAll(".tab-btn").forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("active"));
+      document.querySelectorAll(".tab-pane").forEach(p=>p.classList.remove("active"));
+      btn.classList.add("active");
+      document.getElementById(btn.dataset.tab).classList.add("active");
+    });
+  });
+}
+
+/* ----------------------------------------------------------------------------
+   18. QUICK ACTION MODALS: Visit / Follow-up / Order / Note
+   -------------------------------------------------------------------------- */
+function facilityPicker(selectedId){
+  return `<select id="qaFacility">${STATE.facilities.map(f=>`<option value="${f.id}" ${f.id===selectedId?"selected":""}>${escapeHtml(f.name)}</option>`).join("")}</select>`;
+}
+
+function openVisitModal(facilityId){
+  openModal(`
+    <div class="modal-head"><h3>Add Visit</h3><button class="btn btn-sm btn-ghost" data-action="close-modal">✕</button></div>
+    <div class="modal-body">
+      <div class="form-row"><label>Facility</label>${facilityPicker(facilityId)}</div>
+      <div class="form-row"><label>Visit Date</label><input type="date" id="qaDate" value="${todayStr()}"></div>
+      <div class="tag-wrap" style="margin-bottom:8px;">
+        <label class="tag-check"><input type="checkbox" id="qaPurchaser">Spoke with purchaser</label>
+        <label class="tag-check"><input type="checkbox" id="qaDoctor">Spoke with doctor</label>
+        <label class="tag-check"><input type="checkbox" id="qaPresentation">Product presentation</label>
+        <label class="tag-check"><input type="checkbox" id="qaQuotation">Quotation requested</label>
+        <label class="tag-check"><input type="checkbox" id="qaSample">Sample requested</label>
+        <label class="tag-check"><input type="checkbox" id="qaOrder">Order received</label>
+        <label class="tag-check"><input type="checkbox" id="qaFollowupReq">Follow-up required</label>
+      </div>
+      <div class="form-row"><label>Notes</label><textarea id="qaNotes" placeholder="What happened during the visit?"></textarea></div>
+    </div>
+    <div class="modal-foot"><button class="btn" data-action="close-modal">Cancel</button><button class="btn btn-primary" data-action="save-visit">Save Visit</button></div>
+  `);
+}
+function saveVisitModal(){
+  const id = document.getElementById("qaFacility").value;
+  const f = STATE.facilities.find(x=>x.id===id);
+  if (!f) return;
+  const date = document.getElementById("qaDate").value || todayStr();
+  const flags = {
+    spokePurchaser: document.getElementById("qaPurchaser").checked,
+    spokeDoctor: document.getElementById("qaDoctor").checked,
+    presentation: document.getElementById("qaPresentation").checked,
+    quotation: document.getElementById("qaQuotation").checked,
+    sample: document.getElementById("qaSample").checked,
+    order: document.getElementById("qaOrder").checked,
+    followupRequired: document.getElementById("qaFollowupReq").checked
+  };
+  const notes = document.getElementById("qaNotes").value.trim();
+  f.lastVisit = date;
+  if (f.status==="not_visited"||f.status==="contacted") f.status = "visited";
+  f.funnelStage = Math.max(f.funnelStage||0,2);
+  if (flags.presentation) f.funnelStage = Math.max(f.funnelStage||0,3);
+  if (flags.quotation) f.funnelStage = Math.max(f.funnelStage||0,4);
+  if (flags.followupRequired){ f.funnelStage=Math.max(f.funnelStage||0,5); f.status="follow_up"; if(!f.nextFollowup) f.nextFollowup=addDays(date,3); }
+  if (flags.order){ f.funnelStage=Math.max(f.funnelStage||0,6); f.orders.push({date, product:"Not specified", notes:"Order flagged during visit."}); }
+  f.visitHistory.push({date, type:"Visited", notes: notes || Object.entries(flags).filter(([k,v])=>v).map(([k])=>k).join(", ") || "Visit recorded."});
+  const c = getChecklist(date, f.id);
+  Object.assign(c, {visited:true, ...flags});
+  refreshFacilityScore(f);
+  saveState(); closeModal(); renderCurrentView();
+}
+
+function openFollowupModal(facilityId){
+  openModal(`
+    <div class="modal-head"><h3>Add Follow-up</h3><button class="btn btn-sm btn-ghost" data-action="close-modal">✕</button></div>
+    <div class="modal-body">
+      <div class="form-row"><label>Facility</label>${facilityPicker(facilityId)}</div>
+      <div class="form-2col">
+        <div class="form-row"><label>Follow-up Date</label><input type="date" id="qaFuDate" value="${addDays(todayStr(),3)}"></div>
+        <div class="form-row"><label>Contact Person</label><input type="text" id="qaFuContact" placeholder="Not available"></div>
+      </div>
+      <div class="form-row"><label>Reason</label><input type="text" id="qaFuReason" placeholder="e.g. Waiting on quotation feedback"></div>
+      <div class="form-row"><label>Last Discussion</label><input type="text" id="qaFuLast" placeholder="Summary of last conversation"></div>
+      <div class="form-row"><label>Next Action</label><input type="text" id="qaFuNext" placeholder="e.g. Call to confirm order"></div>
+    </div>
+    <div class="modal-foot"><button class="btn" data-action="close-modal">Cancel</button><button class="btn btn-primary" data-action="save-followup">Save Follow-up</button></div>
+  `);
+}
+function saveFollowupModal(){
+  const id = document.getElementById("qaFacility").value;
+  const f = STATE.facilities.find(x=>x.id===id);
+  if (!f) return;
+  const date = document.getElementById("qaFuDate").value || addDays(todayStr(),3);
+  f.followUps.push({
+    date, contact: document.getElementById("qaFuContact").value.trim()||"Not available",
+    reason: document.getElementById("qaFuReason").value.trim()||"Follow-up",
+    lastDiscussion: document.getElementById("qaFuLast").value.trim(),
+    nextAction: document.getElementById("qaFuNext").value.trim(), done:false
+  });
+  f.nextFollowup = date;
+  if (f.status!=="customer") f.status = "follow_up";
+  f.funnelStage = Math.max(f.funnelStage||0,5);
+  saveState(); closeModal(); renderCurrentView();
+}
+
+function openOrderModal(facilityId){
+  openModal(`
+    <div class="modal-head"><h3>Add Order</h3><button class="btn btn-sm btn-ghost" data-action="close-modal">✕</button></div>
+    <div class="modal-body">
+      <div class="form-row"><label>Facility</label>${facilityPicker(facilityId)}</div>
+      <div class="form-row"><label>Order Date</label><input type="date" id="qaOrderDate" value="${todayStr()}"></div>
+      <div class="form-row"><label>Product(s)</label>${tagCheckboxes("orderProduct",PRODUCT_CATEGORIES,[])}</div>
+      <div class="form-row"><label>Notes</label><textarea id="qaOrderNotes" placeholder="Quantity, value, etc."></textarea></div>
+      <div class="form-row"><label><input type="checkbox" id="qaMarkCustomer"> Mark this facility as a Customer</label></div>
+    </div>
+    <div class="modal-foot"><button class="btn" data-action="close-modal">Cancel</button><button class="btn btn-primary" data-action="save-order">Save Order</button></div>
+  `);
+}
+function saveOrderModal(){
+  const id = document.getElementById("qaFacility").value;
+  const f = STATE.facilities.find(x=>x.id===id);
+  if (!f) return;
+  const date = document.getElementById("qaOrderDate").value || todayStr();
+  const products = getCheckedValues(document, "orderProduct");
+  f.orders.push({date, product: products.join(", ")||"Not specified", notes: document.getElementById("qaOrderNotes").value.trim()});
+  f.funnelStage = Math.max(f.funnelStage||0,6);
+  if (document.getElementById("qaMarkCustomer").checked){ f.status="customer"; f.funnelStage=7; }
+  saveState(); closeModal(); renderCurrentView();
+}
+
+function addQuickNote(facilityId){
+  const f = STATE.facilities.find(x=>x.id===facilityId);
+  const input = document.getElementById("quickNoteInput");
+  const text = input.value.trim();
+  if (!f || !text) return;
+  f.personalNotes.push({date:todayStr(), text});
+  saveState();
+  openFacilityProfile(facilityId);
+  document.querySelector('[data-tab="tabNotes"]').click();
+}
+
+function quickMarkVisited(facilityId){
+  const f = STATE.facilities.find(x=>x.id===facilityId);
+  if (!f) return;
+  const date = todayStr();
+  f.lastVisit = date;
+  if (f.status==="not_visited"||f.status==="contacted") f.status="visited";
+  f.funnelStage = Math.max(f.funnelStage||0,2);
+  f.visitHistory.push({date, type:"Visited", notes:"Marked visited (quick action)."});
+  const route = getTodayRoute();
+  if (route && route.facilityIds.includes(facilityId)) getChecklist(date, facilityId).visited = true;
+  refreshFacilityScore(f);
+  saveState();
+  renderCurrentView();
+}
+
+/* ----------------------------------------------------------------------------
+   19. CSV IMPORT / EXPORT
+   -------------------------------------------------------------------------- */
+function parseCsv(text){
+  const rows = [];
+  let cur = [], field = "", inQuotes = false;
+  for (let i=0;i<text.length;i++){
+    const c = text[i];
+    if (inQuotes){
+      if (c === '"'){ if (text[i+1]==='"'){ field+='"'; i++; } else inQuotes=false; }
+      else field += c;
+    } else {
+      if (c === '"') inQuotes = true;
+      else if (c === ','){ cur.push(field); field=""; }
+      else if (c === '\n'){ cur.push(field); rows.push(cur); cur=[]; field=""; }
+      else if (c === '\r'){ /* skip */ }
+      else field += c;
+    }
+  }
+  if (field.length || cur.length){ cur.push(field); rows.push(cur); }
+  return rows.filter(r => r.some(c=>c.trim()!==""));
+}
+function csvEscape(v){
+  v = v==null ? "" : String(v);
+  return /[",\n]/.test(v) ? '"'+v.replace(/"/g,'""')+'"' : v;
+}
+function toCsv(headers, rows){
+  return [headers.join(","), ...rows.map(r=>r.map(csvEscape).join(","))].join("\n");
+}
+function downloadFile(filename, content, mime){
+  const blob = new Blob([content], {type: mime||"text/plain"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = filename; document.body.appendChild(a); a.click();
+  document.body.removeChild(a); URL.revokeObjectURL(url);
+}
+
+const EXPORT_HEADERS = ["Facility Name","Type","Area","Address","Phone","Website","Specialty","Latitude","Longitude","Priority","Potential","Status","Contact Person","Current Supplier","Products","Notes","Last Visit","Next Follow-up"];
+function facilityToRow(f){
+  return [f.name, f.type, f.area, f.address, f.phone, f.website, (f.specialties||[]).join("; "),
+    f.lat||"", f.lon||"", f.priorityGradeCalc+" ("+f.priorityScore+")", f.potential, statusMeta(f.status).label,
+    f.contactPerson, f.existingSupplier, (f.productCategories||[]).join("; "),
+    (f.personalNotes||[]).map(n=>n.text).join(" | "), f.lastVisit||"", f.nextFollowup||""];
+}
+function exportFacilities(list, filename){
+  const rows = list.map(facilityToRow);
+  downloadFile(filename, toCsv(EXPORT_HEADERS, rows), "text/csv");
+}
+function exportAll(){ exportFacilities(STATE.facilities, "all_facilities.csv"); }
+function exportCustomers(){ exportFacilities(STATE.facilities.filter(f=>f.status==="customer"), "customers.csv"); }
+function exportProspects(){ exportFacilities(STATE.facilities.filter(f=>f.status!=="customer"), "prospects.csv"); }
+function exportTodaysRoute(){
+  const route = STATE.route;
+  if (!route){ alert("No route generated yet."); return; }
+  const list = route.facilityIds.map(id=>STATE.facilities.find(f=>f.id===id)).filter(Boolean);
+  exportFacilities(list, `route_${route.date}.csv`);
+}
+function exportFollowups(){
+  const withFu = STATE.facilities.filter(f=>f.nextFollowup);
+  exportFacilities(withFu, "followups.csv");
+}
+
+/* CSV column header aliases -> normalized keys */
+const CSV_COLUMN_MAP = {
+  "facility name":"name","name":"name","type":"type","area":"area","address":"address","phone":"phone",
+  "website":"website","specialty":"specialty","specialties":"specialty","latitude":"lat","lat":"lat",
+  "longitude":"lon","lon":"lon","priority":"priority","potential":"potential","status":"status",
+  "contact person":"contactPerson","contactperson":"contactPerson","current supplier":"supplier",
+  "supplier":"supplier","products":"products","notes":"notes"
+};
+
+let pendingImport = null; // {toAdd:[], duplicates:[{incoming, existing}]}
+
+function handleCsvFile(file){
+  const reader = new FileReader();
+  reader.onload = e=>{
+    const rows = parseCsv(e.target.result);
+    if (!rows.length){ alert("CSV file appears empty."); return; }
+    const header = rows[0].map(h=>h.trim().toLowerCase());
+    const keys = header.map(h=>CSV_COLUMN_MAP[h]||null);
+    const incoming = rows.slice(1).map(r=>{
+      const obj = {};
+      keys.forEach((k,i)=>{ if (k) obj[k] = (r[i]||"").trim(); });
+      return obj;
+    }).filter(o=>o.name);
+
+    const toAdd = [], duplicates = [];
+    incoming.forEach(row=>{
+      const match = STATE.facilities.find(f=>
+        normalizeStr(f.name)===normalizeStr(row.name) ||
+        (row.phone && digitsOnly(f.phone)===digitsOnly(row.phone) && digitsOnly(row.phone).length>5) ||
+        (row.address && normalizeStr(f.address).length>6 && (normalizeStr(f.address).includes(normalizeStr(row.address)) || normalizeStr(row.address).includes(normalizeStr(f.address))))
+      );
+      if (match) duplicates.push({incoming:row, existingId:match.id});
+      else toAdd.push(row);
+    });
+    pendingImport = {toAdd, duplicates};
+    if (duplicates.length) openDuplicateModal();
+    else { commitImport(toAdd); }
+  };
+  reader.readAsText(file);
+}
+
+function csvRowToFacility(row){
+  const f = {
+    id:uid("f"), name:row.name, type: FACILITY_TYPES.includes(row.type)?row.type:FACILITY_TYPES[0],
+    area: row.area || "Other Sharjah areas", address: row.address || "Not available",
+    lat: parseFloat(row.lat)||null, lon: parseFloat(row.lon)||null,
+    phone: row.phone || "Not available", website: row.website || "Not available",
+    specialties: row.specialty ? row.specialty.split(/[;,]/).map(s=>s.trim()).filter(Boolean) : [],
+    doctors:"Not available", contactPerson: row.contactPerson || "Not available", contactRole: CONTACT_ROLES[0],
+    purchasingStructure:"Unknown", purchasingMethod:"Unknown", existingSupplier: row.supplier || "Not available",
+    productCategories: row.products ? row.products.split(/[;,]/).map(s=>s.trim()).filter(Boolean) : [],
+    potential: ["High","Medium","Low"].includes(row.potential)?row.potential:"Medium",
+    priorityOverride: row.priority && !isNaN(parseInt(row.priority)) ? parseInt(row.priority) : null,
+    status: STATUSES.some(s=>s.key===row.status)?row.status:"not_visited",
+    customerType: CUSTOMER_TYPES[0], opportunity:"Medium",
+    lastVisit:null, nextFollowup:null, visitHistory:[], followUps:[], orders:[],
+    personalNotes: row.notes ? [{date:todayStr(), text:row.notes}] : [],
+    funnelStage:0, isSample:false, createdAt:todayStr()
+  };
+  if (!STATE.areas.includes(f.area)) STATE.areas.push(f.area);
+  refreshFacilityScore(f);
+  return f;
+}
+
+function commitImport(toAdd){
+  const facs = toAdd.map(csvRowToFacility);
+  STATE.facilities.push(...facs);
+  saveState();
+  renderCurrentView();
+  alert(`Imported ${facs.length} new facilities.`);
+}
+
+function openDuplicateModal(){
+  const {duplicates} = pendingImport;
+  openModal(`
+    <div class="modal-head"><h3>Possible Duplicates Found (${duplicates.length})</h3><button class="btn btn-sm btn-ghost" data-action="close-modal">✕</button></div>
+    <div class="modal-body">
+      ${duplicates.map((d,i)=>{
+        const existing = STATE.facilities.find(f=>f.id===d.existingId);
+        return `<div class="dup-item">
+          <div style="font-weight:700; font-size:12.5px;">Incoming: ${escapeHtml(d.incoming.name)}</div>
+          <div class="sub">Matches existing: ${escapeHtml(existing?existing.name:"—")}</div>
+          <div class="tag-wrap" style="margin-top:6px;">
+            <label class="tag-check"><input type="radio" name="dup${i}" value="merge" checked> Merge</label>
+            <label class="tag-check"><input type="radio" name="dup${i}" value="both"> Keep Both</label>
+            <label class="tag-check"><input type="radio" name="dup${i}" value="ignore"> Ignore</label>
+          </div>
+        </div>`;
+      }).join("")}
+    </div>
+    <div class="modal-foot"><button class="btn" data-action="close-modal">Cancel Import</button><button class="btn btn-primary" data-action="resolve-duplicates">Apply &amp; Import</button></div>
+  `);
+}
+
+function resolveDuplicates(){
+  const {toAdd, duplicates} = pendingImport;
+  const finalAdds = toAdd.slice();
+  duplicates.forEach((d,i)=>{
+    const choice = document.querySelector(`input[name="dup${i}"]:checked`).value;
+    if (choice==="ignore") return;
+    if (choice==="both"){ finalAdds.push(d.incoming); return; }
+    if (choice==="merge"){
+      const existing = STATE.facilities.find(f=>f.id===d.existingId);
+      if (existing){
+        const row = d.incoming;
+        if (row.phone) existing.phone = row.phone;
+        if (row.website) existing.website = row.website;
+        if (row.address) existing.address = row.address;
+        if (row.specialty) existing.specialties = Array.from(new Set([...(existing.specialties||[]), ...row.specialty.split(/[;,]/).map(s=>s.trim()).filter(Boolean)]));
+        if (row.products) existing.productCategories = Array.from(new Set([...(existing.productCategories||[]), ...row.products.split(/[;,]/).map(s=>s.trim()).filter(Boolean)]));
+        if (row.supplier) existing.existingSupplier = row.supplier;
+        if (row.contactPerson) existing.contactPerson = row.contactPerson;
+        if (row.notes) existing.personalNotes.push({date:todayStr(), text:row.notes});
+        refreshFacilityScore(existing);
+      }
+    }
+  });
+  commitImport(finalAdds);
+  pendingImport = null;
+}
+
+/* ----------------------------------------------------------------------------
+   20. BACKUP / RESTORE
+   -------------------------------------------------------------------------- */
+function backupData(){
+  downloadFile(`sharjah_crm_backup_${todayStr()}.json`, JSON.stringify(STATE,null,2), "application/json");
+}
+function restoreData(file){
+  const reader = new FileReader();
+  reader.onload = e=>{
+    try{
+      const data = JSON.parse(e.target.result);
+      if (!data.facilities || !Array.isArray(data.facilities)) throw new Error("Invalid backup file.");
+      STATE = data;
+      STATE.facilities.forEach(refreshFacilityScore);
+      if (!STATE.routeChecklist) STATE.routeChecklist = {};
+      if (!STATE.areas) STATE.areas = DEFAULT_AREAS.slice();
+      saveState();
+      alert("Data restored successfully.");
+      renderCurrentView();
+    } catch(err){ alert("Could not restore backup: " + err.message); }
+  };
+  reader.readAsText(file);
+}
+function resetAllData(){
+  if (!confirm("This will permanently delete all locally stored data (facilities, visits, notes, follow-ups) and reload sample data. Continue?")) return;
+  STATE = createDefaultState();
+  saveState();
+  renderCurrentView();
+}
+
+/* ----------------------------------------------------------------------------
+   21. FOLLOW-UP QUICK ACTIONS (done / reschedule)
+   -------------------------------------------------------------------------- */
+function markFollowupDone(facilityId){
+  const f = STATE.facilities.find(x=>x.id===facilityId);
+  if (!f) return;
+  const fu = nearestOpenFollowUp(f);
+  if (fu) fu.done = true;
+  f.nextFollowup = null;
+  saveState(); renderCurrentView();
+}
+function rescheduleFollowup(facilityId){
+  const f = STATE.facilities.find(x=>x.id===facilityId);
+  if (!f) return;
+  const newDate = prompt("Reschedule follow-up to (YYYY-MM-DD):", addDays(todayStr(),3));
+  if (!newDate) return;
+  f.nextFollowup = newDate;
+  const fu = nearestOpenFollowUp(f);
+  if (fu) fu.date = newDate; else f.followUps.push({date:newDate, reason:"Rescheduled follow-up", contact:f.contactPerson, done:false});
+  saveState(); renderCurrentView();
+}
+
+/* ----------------------------------------------------------------------------
+   22. ACTION DISPATCHER (event delegation)
+   -------------------------------------------------------------------------- */
+document.addEventListener("click", e=>{
+  const t = e.target.closest("[data-action]");
+  if (!t) return;
+  const action = t.dataset.action, id = t.dataset.id;
+  switch(action){
+    case "close-modal": closeModal(); break;
+    case "open-add-facility": openFacilityForm(null); break;
+    case "edit-facility": closeModal(); openFacilityForm(id); break;
+    case "delete-facility":
+      if (confirm("Delete this facility permanently?")){
+        STATE.facilities = STATE.facilities.filter(f=>f.id!==id);
+        saveState(); closeModal(); renderCurrentView();
+      }
+      break;
+    case "save-facility": saveFacilityForm(id||null); break;
+    case "view-facility": openFacilityProfile(id); break;
+    case "quick-visit": quickMarkVisited(id); break;
+    case "quick-add-visit": openVisitModal(id||null); break;
+    case "save-visit": saveVisitModal(); break;
+    case "quick-add-followup": openFollowupModal(id||null); break;
+    case "save-followup": saveFollowupModal(); break;
+    case "quick-add-order": openOrderModal(id||null); break;
+    case "save-order": saveOrderModal(); break;
+    case "quick-add-customer": openFacilityForm(null, "customer"); break;
+    case "add-quick-note": addQuickNote(id); break;
+    case "route-mark-visited": quickMarkVisited(id); break;
+    case "route-add-note": {
+      const note = prompt("Add a note for this facility:");
+      if (note){ const f=STATE.facilities.find(x=>x.id===id); if(f){ f.personalNotes.push({date:todayStr(),text:note}); saveState(); renderCurrentView(); } }
+      break;
+    }
+    case "generate-route": generateRoute(); break;
+    case "goto-route": setView("route"); break;
+    case "export-route": exportTodaysRoute(); break;
+    case "export-followups": exportFollowups(); break;
+    case "export-all": exportAll(); break;
+    case "export-customers": exportCustomers(); break;
+    case "export-prospects": exportProspects(); break;
+    case "followup-done": markFollowupDone(id); break;
+    case "followup-reschedule": rescheduleFollowup(id); break;
+    case "add-area": {
+      const input = document.getElementById("newAreaInput");
+      const val = input.value.trim();
+      if (val && !STATE.areas.includes(val)){ STATE.areas.push(val); saveState(); renderSettingsView(); populateFilterOptions(); }
+      input.value = "";
+      break;
+    }
+    case "remove-area": {
+      if (confirm(`Remove area "${id}"? Facilities already assigned to it will keep the label.`)){
+        STATE.areas = STATE.areas.filter(a=>a!==id);
+        saveState(); renderSettingsView(); populateFilterOptions();
+      }
+      break;
+    }
+    case "backup-data": backupData(); break;
+    case "reset-data": resetAllData(); break;
+    case "open-import": document.getElementById("csvFileInput").click(); break;
+    case "resolve-duplicates": resolveDuplicates(); closeModal(); break;
+    case "open-export": exportAll(); break;
+    case "clear-filters": {
+      ["facSearch","fType","fArea","fSpecialty","fPriority","fStatus","fPotential","fVisited","fFollowup","fCustProspect","fProduct","fPurchasing"].forEach(id=>{
+        const el = document.getElementById(id); if (el) el.value = "";
+      });
+      renderFacilitiesView();
+      break;
+    }
+    case "toggle-advanced": {
+      const panel = document.getElementById("advancedFilters");
+      const nowVisible = panel.style.display === "none";
+      panel.style.display = nowVisible ? "flex" : "none";
+      t.textContent = nowVisible ? "⚙ Fewer Filters" : "⚙ More Filters";
+      break;
+    }
+    case "toggle-map": {
+      mapVisible = !mapVisible;
+      document.getElementById("mapPanel").style.display = mapVisible ? "block" : "none";
+      if (mapVisible){
+        if (navigator.geolocation && !userGeo){
+          navigator.geolocation.getCurrentPosition(pos=>{ userGeo={lat:pos.coords.latitude, lon:pos.coords.longitude}; }, ()=>{});
+        }
+        renderMap(getFilteredFacilities());
+      }
+      break;
+    }
+  }
+});
+
+document.addEventListener("change", e=>{
+  if (e.target.id === "csvFileInput" && e.target.files[0]){
+    handleCsvFile(e.target.files[0]);
+    e.target.value = "";
+  }
+  if (e.target.id === "restoreFile" && e.target.files[0]){
+    if (confirm("Restoring will replace all current data with the backup file. Continue?")) restoreData(e.target.files[0]);
+    e.target.value = "";
+  }
+});
+
+/* ----------------------------------------------------------------------------
+   23. NAV WIRING / FILTER LIVE UPDATE / INIT
+   -------------------------------------------------------------------------- */
+document.querySelectorAll(".navitem[data-view]").forEach(btn=>{
+  btn.addEventListener("click", ()=> setView(btn.dataset.view));
+});
+
+document.getElementById("globalSearch").addEventListener("input", ()=>{
+  if (currentView !== "facilities") setView("facilities");
+  const fs = document.getElementById("facSearch");
+  if (fs) fs.value = document.getElementById("globalSearch").value;
+  renderFacilitiesView();
+});
+
+["facSearch","fType","fArea","fSpecialty","fPriority","fStatus","fPotential","fVisited","fFollowup","fCustProspect","fProduct","fPurchasing","fSort"].forEach(id=>{
+  document.addEventListener("input", e=>{ if (e.target.id===id) renderFacilitiesView(); });
+  document.addEventListener("change", e=>{ if (e.target.id===id) renderFacilitiesView(); });
+});
+
+// Bootstrap
+populateFilterOptions();
+setView("dashboard");
+
+
+</script>
+</body>
+</html>
